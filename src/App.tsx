@@ -6,6 +6,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { Layout } from "@/components/layout/Layout";
 import { Login } from "@/pages/Login";
 import { Dashboard } from "@/pages/Dashboard";
+import Medicos from "@/pages/Medicos";
 import { Agendamentos } from "@/pages/Agendamentos";
 import { Consultas } from "@/pages/Consultas";
 import { Prontuarios } from "@/pages/Prontuarios";
@@ -66,6 +67,14 @@ const AppRoutes = () => (
       } 
     />
     <Route 
+      path="/medicos" 
+      element={
+        <ProtectedRoute>
+          <Medicos />
+        </ProtectedRoute>
+      } 
+    />
+    <Route 
       path="/agendamentos" 
       element={
         <ProtectedRoute>
@@ -73,7 +82,7 @@ const AppRoutes = () => (
             <Agendamentos />
           </Layout>
         </ProtectedRoute>
-      } 
+      }
     />
     <Route 
       path="/consultas" 

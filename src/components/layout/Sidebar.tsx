@@ -57,7 +57,7 @@ const navigationItems: NavItem[] = [
     href: '/medicos',
     label: 'Médicos',
     icon: Stethoscope,
-    roles: ['clinica'],
+    roles: ['clinica', 'paciente'],
   },
   {
     href: '/pacientes',

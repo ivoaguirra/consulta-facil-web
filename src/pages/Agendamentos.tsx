@@ -59,6 +59,11 @@ const mockMedicos = [
   { id: '1', nome: 'Dr. João Silva', especialidade: 'Cardiologia' },
   { id: '2', nome: 'Dra. Maria Santos', especialidade: 'Pediatria' },
   { id: '3', nome: 'Dr. Pedro Costa', especialidade: 'Dermatologia' },
+  { id: '4', nome: 'Dra. Ana Oliveira', especialidade: 'Ginecologia' },
+  { id: '5', nome: 'Dr. Carlos Mendes', especialidade: 'Ortopedia' },
+  { id: '6', nome: 'Dra. Paula Lima', especialidade: 'Neurologia' },
+  { id: '7', nome: 'Dr. Ricardo Santos', especialidade: 'Oftalmologia' },
+  { id: '8', nome: 'Dra. Fernanda Costa', especialidade: 'Endocrinologia' },
 ];
 
 export const Agendamentos: React.FC = () => {
