@@ -2,39 +2,60 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
+/* Sistema de Design da Plataforma de Telemedicina
+Todas as cores DEVEM ser HSL para máxima flexibilidade
 */
 
 @layer base {
   :root {
+    /* Cores base médicas */
     --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --foreground: 210 20% 15%;
 
+    /* Cards e superfícies */
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 210 20% 15%;
+    --card-elevated: 210 25% 98%;
 
+    /* Popover e modais */
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 210 20% 15%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Azul médico principal */
+    --primary: 210 85% 45%;
+    --primary-foreground: 0 0% 100%;
+    --primary-light: 210 85% 55%;
+    --primary-dark: 210 85% 35%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Verde saúde secundário */
+    --secondary: 142 76% 36%;
+    --secondary-foreground: 0 0% 100%;
+    --secondary-light: 142 76% 46%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    /* Tons neutros profissionais */
+    --muted: 210 15% 95%;
+    --muted-foreground: 210 10% 45%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    /* Accent médico */
+    --accent: 210 25% 96%;
+    --accent-foreground: 210 20% 15%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    /* Estados de erro */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    /* Estados de sucesso */
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+
+    /* Estados de aviso */
+    --warning: 45 93% 47%;
+    --warning-foreground: 0 0% 100%;
+
+    /* Bordas e inputs */
+    --border: 210 20% 90%;
+    --input: 210 20% 95%;
+    --ring: 210 85% 45%;
 
     --radius: 0.5rem;
 
