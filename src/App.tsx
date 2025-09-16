@@ -12,6 +12,7 @@ import { Prontuarios } from "@/pages/Prontuarios";
 import { Pagamentos } from "@/pages/Pagamentos";
 import { Clinicas } from "@/pages/Clinicas";
 import Pacientes from "@/pages/Pacientes";
+import DocumentosMedicos from "@/pages/DocumentosMedicos";
 import NotFound from "@/pages/NotFound";
 
 // Componente para rotas protegidas
@@ -121,6 +122,14 @@ const AppRoutes = () => (
           <Layout>
             <Pacientes />
           </Layout>
+        </ProtectedRoute>
+      } 
+    />
+    <Route 
+      path="/documentos" 
+      element={
+        <ProtectedRoute>
+          <DocumentosMedicos />
         </ProtectedRoute>
       } 
     />

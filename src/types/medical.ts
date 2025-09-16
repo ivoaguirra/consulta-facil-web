@@ -86,3 +86,63 @@ export interface Especialidade {
   descricao: string;
   valorConsulta: number;
 }
+
+export interface Atestado {
+  id: string;
+  pacienteId: string;
+  pacienteNome: string;
+  pacienteCpf: string;
+  medicoId: string;
+  medicoNome: string;
+  medicoCrm: string;
+  especialidade: string;
+  dataEmissao: string;
+  dataInicio: string;
+  dataFim: string;
+  diasAfastamento: number;
+  cid?: string;
+  diagnostico: string;
+  observacoes?: string;
+  tipoAtestado: 'comparecimento' | 'afastamento' | 'acompanhante';
+  status: 'rascunho' | 'emitido' | 'enviado';
+  consultaId?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SolicitacaoExame {
+  id: string;
+  pacienteId: string;
+  pacienteNome: string;
+  pacienteCpf: string;
+  medicoId: string;
+  medicoNome: string;
+  medicoCrm: string;
+  especialidade: string;
+  dataEmissao: string;
+  exames: {
+    id: string;
+    nome: string;
+    tipo: 'laboratorial' | 'imagem' | 'funcional';
+    justificativa: string;
+    urgencia: 'rotina' | 'urgente' | 'emergencia';
+    preparo?: string;
+  }[];
+  observacoes?: string;
+  status: 'rascunho' | 'emitida' | 'enviada';
+  laboratorioPreferencial?: string;
+  consultaId?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Procedimento {
+  id: string;
+  nome: string;
+  tipo: 'cirurgia' | 'exame' | 'consulta_especializada' | 'procedimento_ambulatorial';
+  especialidadeRequerida: string;
+  duracaoEstimada: number; // em minutos
+  preparoNecessario?: string;
+  valorEstimado?: number;
+  requirInternacao: boolean;
+}

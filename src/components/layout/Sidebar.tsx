@@ -48,6 +48,12 @@ const navigationItems: NavItem[] = [
     roles: ['medico', 'paciente'],
   },
   {
+    href: '/documentos',
+    label: 'Documentos Médicos',
+    icon: FileText,
+    roles: ['medico'],
+  },
+  {
     href: '/medicos',
     label: 'Médicos',
     icon: Stethoscope,
