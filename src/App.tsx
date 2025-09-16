@@ -11,6 +11,7 @@ import { Consultas } from "@/pages/Consultas";
 import { Prontuarios } from "@/pages/Prontuarios";
 import { Pagamentos } from "@/pages/Pagamentos";
 import { Clinicas } from "@/pages/Clinicas";
+import Pacientes from "@/pages/Pacientes";
 import NotFound from "@/pages/NotFound";
 
 // Componente para rotas protegidas
@@ -109,6 +110,16 @@ const AppRoutes = () => (
         <ProtectedRoute>
           <Layout>
             <Clinicas />
+          </Layout>
+        </ProtectedRoute>
+      } 
+    />
+    <Route 
+      path="/pacientes" 
+      element={
+        <ProtectedRoute>
+          <Layout>
+            <Pacientes />
           </Layout>
         </ProtectedRoute>
       } 
