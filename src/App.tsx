@@ -1,7 +1,6 @@
+import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
-// import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { Layout } from "@/components/layout/Layout";
@@ -13,8 +12,6 @@ import { Prontuarios } from "@/pages/Prontuarios";
 import { Pagamentos } from "@/pages/Pagamentos";
 import { Clinicas } from "@/pages/Clinicas";
 import NotFound from "@/pages/NotFound";
-
-const queryClient = new QueryClient();
 
 // Componente para rotas protegidas
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -122,15 +119,13 @@ const AppRoutes = () => (
 );
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <BrowserRouter>
-        <Toaster />
-        <Sonner />
-        <AppRoutes />
-      </BrowserRouter>
-    </AuthProvider>
-  </QueryClientProvider>
+  <AuthProvider>
+    <BrowserRouter>
+      <Toaster />
+      <Sonner />
+      <AppRoutes />
+    </BrowserRouter>
+  </AuthProvider>
 );
 
 export default App;
