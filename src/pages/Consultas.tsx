@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Video,
   Calendar,
@@ -16,9 +17,13 @@ import {
   Mic,
   MicOff,
   VideoOff,
-  Monitor
+  Monitor,
+  Settings,
+  Pill
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { TesteDispositivos } from '@/components/consulta/TesteDispositivos';
+import { ReceituarioDigital } from '@/components/receituario/ReceituarioDigital';
 
 interface ConsultaItem {
   id: string;
@@ -58,6 +63,8 @@ export const Consultas: React.FC = () => {
   const { toast } = useToast();
   const [consultas, setConsultas] = useState<ConsultaItem[]>(mockConsultas);
   const [consultaAtiva, setConsultaAtiva] = useState<ConsultaItem | null>(null);
+  const [dispositivosTestados, setDispositivosTestados] = useState(false);
+  const [mostrarReceituario, setMostrarReceituario] = useState(false);
 
   if (!user) return null;
 
@@ -125,21 +132,21 @@ export const Consultas: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       <div>
         <h1 className="text-3xl font-bold">Consultas</h1>
         <p className="text-muted-foreground">
           {user.role === 'paciente' && 'Participe das suas consultas por videoconferência'}
-          {user.role === 'medico' && 'Realize atendimentos virtuais'}
+          {user.role === 'medico' && 'Realize atendimentos virtuais com ferramentas avançadas'}
         </p>
       </div>
 
       {/* Consulta Ativa */}
       {consultaAtiva && (
-        <Card className="border-warning bg-warning/5">
+        <Card className="border-warning bg-warning/5 animate-pulse-success">
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
-              <Video className="w-5 h-5 text-warning" />
+              <Video className="w-5 h-5 text-warning animate-bounce-subtle" />
               <span>Consulta em Andamento</span>
             </CardTitle>
           </CardHeader>
@@ -158,6 +165,15 @@ export const Consultas: React.FC = () => {
                 <Button variant="outline" size="sm">
                   <VideoOff className="w-4 h-4" />
                 </Button>
+                {user.role === 'medico' && (
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setMostrarReceituario(true)}
+                  >
+                    <Pill className="w-4 h-4" />
+                  </Button>
+                )}
                 <Button variant="destructive" size="sm" onClick={handleFinalizarConsulta}>
                   <PhoneOff className="w-4 h-4 mr-2" />
                   Finalizar
@@ -175,7 +191,7 @@ export const Consultas: React.FC = () => {
           const podeIniciar = isConsultaDisponivel(consulta.dataHora);
           
           return (
-            <Card key={consulta.id}>
+            <Card key={consulta.id} className="animate-fade-in hover:shadow-lg transition-all duration-300">
               <CardContent className="p-6">
                 <div className="flex justify-between items-start">
                   <div className="space-y-3 flex-1">
@@ -226,66 +242,125 @@ export const Consultas: React.FC = () => {
                             Iniciar
                           </Button>
                         </DialogTrigger>
-                        <DialogContent className="max-w-4xl h-[80vh]">
+                        <DialogContent className="max-w-6xl h-[90vh]">
                           <DialogHeader>
-                            <DialogTitle>Videoconferência - TeleMed</DialogTitle>
+                            <DialogTitle>Consulta Virtual - TeleMed</DialogTitle>
                           </DialogHeader>
-                          <div className="flex-1 space-y-4">
-                            {/* Interface de Videoconferência */}
-                            <div className="bg-gray-900 rounded-lg h-96 flex items-center justify-center relative">
-                              <iframe
-                                src={consulta.linkVideoconferencia}
-                                width="100%"
-                                height="100%"
-                                className="rounded-lg"
-                                allow="camera; microphone; fullscreen; speaker; display-capture"
-                                title="Videoconferência TeleMed"
-                              />
-                            </div>
-                            
-                            {/* Controles */}
-                            <div className="flex justify-center space-x-4">
-                              <Button 
-                                size="sm" 
-                                className="bg-success hover:bg-success/90"
-                                onClick={() => handleIniciarConsulta(consulta)}
-                              >
-                                <Phone className="w-4 h-4 mr-2" />
-                                Conectar
-                              </Button>
-                              <Button variant="outline" size="sm">
-                                <Mic className="w-4 h-4" />
-                              </Button>
-                              <Button variant="outline" size="sm">
-                                <Video className="w-4 h-4" />
-                              </Button>
-                              <Button variant="outline" size="sm">
-                                <Monitor className="w-4 h-4" />
-                              </Button>
-                            </div>
+                          <div className="flex-1">
+                            <Tabs defaultValue="dispositivos" className="h-full">
+                              <TabsList className="grid w-full grid-cols-3">
+                                <TabsTrigger value="dispositivos" className="flex items-center space-x-2">
+                                  <Settings className="w-4 h-4" />
+                                  <span>Teste de Dispositivos</span>
+                                </TabsTrigger>
+                                <TabsTrigger value="consulta" disabled={!dispositivosTestados}>
+                                  <Video className="w-4 h-4 mr-2" />
+                                  Videoconferência
+                                </TabsTrigger>
+                                <TabsTrigger value="receituario" disabled={user.role !== 'medico'}>
+                                  <Pill className="w-4 h-4 mr-2" />
+                                  Receituário
+                                </TabsTrigger>
+                              </TabsList>
 
-                            {/* Informações da consulta */}
-                            <div className="bg-muted p-4 rounded-lg">
-                              <h4 className="font-medium mb-2">Informações da Consulta</h4>
-                              <div className="grid grid-cols-2 gap-4 text-sm">
-                                <div>
-                                  <span className="text-muted-foreground">Paciente: </span>
-                                  <span>{consulta.pacienteNome}</span>
+                              <TabsContent value="dispositivos" className="mt-4 h-full">
+                                <TesteDispositivos 
+                                  onTesteCompleto={setDispositivosTestados}
+                                  className="h-full"
+                                />
+                              </TabsContent>
+
+                              <TabsContent value="consulta" className="mt-4 space-y-4">
+                                {/* Interface de Videoconferência */}
+                                <div className="bg-gray-900 rounded-lg h-96 flex items-center justify-center relative animate-fade-in">
+                                  <iframe
+                                    src={consulta.linkVideoconferencia}
+                                    width="100%"
+                                    height="100%"
+                                    className="rounded-lg"
+                                    allow="camera; microphone; fullscreen; speaker; display-capture"
+                                    title="Videoconferência TeleMed"
+                                  />
                                 </div>
-                                <div>
-                                  <span className="text-muted-foreground">Médico: </span>
-                                  <span>{consulta.medicoNome}</span>
+                                
+                                {/* Controles */}
+                                <div className="flex justify-center space-x-4">
+                                  <Button 
+                                    size="sm" 
+                                    className="bg-success hover:bg-success/90"
+                                    onClick={() => handleIniciarConsulta(consulta)}
+                                  >
+                                    <Phone className="w-4 h-4 mr-2" />
+                                    Conectar
+                                  </Button>
+                                  <Button variant="outline" size="sm">
+                                    <Mic className="w-4 h-4" />
+                                  </Button>
+                                  <Button variant="outline" size="sm">
+                                    <Video className="w-4 h-4" />
+                                  </Button>
+                                  <Button variant="outline" size="sm">
+                                    <Monitor className="w-4 h-4" />
+                                  </Button>
+                                  {user.role === 'medico' && (
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm"
+                                      onClick={() => setMostrarReceituario(true)}
+                                    >
+                                      <Pill className="w-4 h-4 mr-2" />
+                                      Receituário
+                                    </Button>
+                                  )}
                                 </div>
-                                <div>
-                                  <span className="text-muted-foreground">Especialidade: </span>
-                                  <span>{consulta.especialidade}</span>
-                                </div>
-                                <div>
-                                  <span className="text-muted-foreground">Horário: </span>
-                                  <span>{date} às {time}</span>
-                                </div>
-                              </div>
-                            </div>
+
+                                {/* Informações da consulta */}
+                                <Card className="bg-card-elevated animate-fade-in">
+                                  <CardContent className="p-4">
+                                    <h4 className="font-medium mb-3">Informações da Consulta</h4>
+                                    <div className="grid grid-cols-2 gap-4 text-sm">
+                                      <div>
+                                        <span className="text-muted-foreground">Paciente: </span>
+                                        <span className="font-medium">{consulta.pacienteNome}</span>
+                                      </div>
+                                      <div>
+                                        <span className="text-muted-foreground">Médico: </span>
+                                        <span className="font-medium">{consulta.medicoNome}</span>
+                                      </div>
+                                      <div>
+                                        <span className="text-muted-foreground">Especialidade: </span>
+                                        <span className="font-medium">{consulta.especialidade}</span>
+                                      </div>
+                                      <div>
+                                        <span className="text-muted-foreground">Horário: </span>
+                                        <span className="font-medium">{date} às {time}</span>
+                                      </div>
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              </TabsContent>
+
+                              <TabsContent value="receituario" className="mt-4">
+                                <ReceituarioDigital
+                                  consultaId={consulta.id}
+                                  pacienteNome={consulta.pacienteNome}
+                                  medicoNome={consulta.medicoNome}
+                                  especialidade={consulta.especialidade}
+                                  onSave={(receita) => {
+                                    toast({
+                                      title: 'Receita salva',
+                                      description: 'A receita foi salva com sucesso.'
+                                    });
+                                  }}
+                                  onSend={(receita) => {
+                                    toast({
+                                      title: 'Receita enviada',
+                                      description: 'A receita foi enviada para o paciente.'
+                                    });
+                                  }}
+                                />
+                              </TabsContent>
+                            </Tabs>
                           </div>
                         </DialogContent>
                       </Dialog>
