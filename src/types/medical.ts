@@ -54,6 +54,32 @@ export interface Agendamento {
   updatedAt: string;
 }
 
+export interface Paciente {
+  id: string;
+  nome: string;
+  cpf: string;
+  email: string;
+  telefone: string;
+  dataNascimento: string;
+  endereco: {
+    rua: string;
+    numero: string;
+    complemento?: string;
+    bairro: string;
+    cidade: string;
+    estado: string;
+    cep: string;
+  };
+  convenio?: {
+    nome: string;
+    numero: string;
+  };
+  historicoMedico?: string;
+  observacoes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Especialidade {
   id: string;
   nome: string;
