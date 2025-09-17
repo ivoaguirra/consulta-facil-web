@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,167 +16,212 @@ import {
   Plus,
   Check,
   X,
-  Eye
+  Eye,
+  Loader2
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-// Interfaces para agendamentos
+// Interface para agendamentos do Supabase
 interface AgendamentoItem {
   id: string;
-  pacienteNome: string;
-  medicoNome: string;
-  especialidade: string;
-  dataHora: string;
-  motivo: string;
-  status: 'pendente' | 'aprovada' | 'rejeitada';
-  tipo: 'primeira_consulta' | 'retorno' | 'urgencia';
+  paciente_id: string;
+  medico_id: string;
+  clinica_id?: string;
+  data_agendamento: string;
+  duracao_minutos: number;
+  tipo_consulta: string;
+  status: 'agendado' | 'confirmado' | 'em_andamento' | 'concluido' | 'cancelado';
+  observacoes?: string;
+  valor?: number;
+  created_at: string;
+  updated_at: string;
 }
-
-// Mock data para agendamentos
-const mockAgendamentos: AgendamentoItem[] = [
-  {
-    id: '1',
-    pacienteNome: 'Maria Santos',
-    medicoNome: 'Dr. João Silva',
-    especialidade: 'Cardiologia',
-    dataHora: '2024-03-15T14:30:00',
-    motivo: 'Dor no peito e falta de ar',
-    status: 'pendente',
-    tipo: 'primeira_consulta',
-  },
-  {
-    id: '2',
-    pacienteNome: 'Pedro Costa',
-    medicoNome: 'Dr. João Silva',
-    especialidade: 'Cardiologia',
-    dataHora: '2024-03-16T10:00:00',
-    motivo: 'Retorno para avaliação de exames',
-    status: 'aprovada',
-    tipo: 'retorno',
-  },
-];
-
-const mockMedicos = [
-  { id: '1', nome: 'Dr. João Silva', especialidade: 'Cardiologia' },
-  { id: '2', nome: 'Dra. Maria Santos', especialidade: 'Pediatria' },
-  { id: '3', nome: 'Dr. Pedro Costa', especialidade: 'Dermatologia' },
-  { id: '4', nome: 'Dra. Ana Oliveira', especialidade: 'Ginecologia' },
-  { id: '5', nome: 'Dr. Carlos Mendes', especialidade: 'Ortopedia' },
-  { id: '6', nome: 'Dra. Paula Lima', especialidade: 'Neurologia' },
-  { id: '7', nome: 'Dr. Ricardo Santos', especialidade: 'Oftalmologia' },
-  { id: '8', nome: 'Dra. Fernanda Costa', especialidade: 'Endocrinologia' },
-];
 
 export const Agendamentos: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [showForm, setShowForm] = useState(false);
-  const [agendamentos, setAgendamentos] = useState<AgendamentoItem[]>(mockAgendamentos);
-  
-  const [formData, setFormData] = useState({
-    medicoId: '',
-    dataHora: '',
-    motivo: '',
-    tipo: 'primeira_consulta' as const,
+  const [agendamentos, setAgendamentos] = useState<AgendamentoItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showNovoAgendamento, setShowNovoAgendamento] = useState(false);
+
+  // Estado para novo agendamento
+  const [novoAgendamento, setNovoAgendamento] = useState({
+    medico_id: '',
+    data_agendamento: '',
+    tipo_consulta: '',
+    observacoes: '',
+    duracao_minutos: 30,
   });
 
-  if (!user) return null;
+  // Buscar agendamentos do usuário
+  useEffect(() => {
+    if (user) {
+      buscarAgendamentos();
+    }
+  }, [user]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    const medico = mockMedicos.find(m => m.id === formData.medicoId);
-    if (!medico) return;
+  const buscarAgendamentos = async () => {
+    try {
+      setLoading(true);
+      
+      let query = supabase
+        .from('agendamentos')
+        .select('*');
 
-    const novoAgendamento = {
-      id: Date.now().toString(),
-      pacienteNome: user.nome,
-      medicoNome: medico.nome,
-      especialidade: medico.especialidade,
-      dataHora: formData.dataHora,
-      motivo: formData.motivo,
-      status: 'pendente' as const,
-      tipo: formData.tipo,
+      // Filtrar por role do usuário
+      if (user?.role === 'paciente') {
+        query = query.eq('paciente_id', user.id);
+      } else if (user?.role === 'medico') {
+        query = query.eq('medico_id', user.id);
+      }
+
+      const { data, error } = await query.order('data_agendamento', { ascending: true });
+
+      if (error) {
+        console.error('Erro ao buscar agendamentos:', error);
+        toast({
+          title: 'Erro',
+          description: 'Erro ao carregar agendamentos',
+          variant: 'destructive',
+        });
+      } else {
+        setAgendamentos((data as AgendamentoItem[]) || []);
+      }
+    } catch (error) {
+      console.error('Erro:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const criarAgendamento = async () => {
+    if (!user || !novoAgendamento.medico_id || !novoAgendamento.data_agendamento || !novoAgendamento.tipo_consulta) {
+      toast({
+        title: 'Erro',
+        description: 'Preencha todos os campos obrigatórios',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('agendamentos')
+        .insert([
+          {
+            paciente_id: user.id,
+            medico_id: novoAgendamento.medico_id,
+            data_agendamento: new Date(novoAgendamento.data_agendamento).toISOString(),
+            tipo_consulta: novoAgendamento.tipo_consulta,
+            observacoes: novoAgendamento.observacoes,
+            duracao_minutos: novoAgendamento.duracao_minutos,
+            status: 'agendado',
+          }
+        ])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Erro ao criar agendamento:', error);
+        toast({
+          title: 'Erro',
+          description: 'Erro ao criar agendamento',
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Sucesso',
+          description: 'Agendamento criado com sucesso!',
+        });
+        setShowNovoAgendamento(false);
+        setNovoAgendamento({
+          medico_id: '',
+          data_agendamento: '',
+          tipo_consulta: '',
+          observacoes: '',
+          duracao_minutos: 30,
+        });
+        buscarAgendamentos();
+      }
+    } catch (error) {
+      console.error('Erro:', error);
+    }
+  };
+
+  const atualizarStatusAgendamento = async (id: string, novoStatus: AgendamentoItem['status']) => {
+    try {
+      const { error } = await supabase
+        .from('agendamentos')
+        .update({ status: novoStatus })
+        .eq('id', id);
+
+      if (error) {
+        console.error('Erro ao atualizar status:', error);
+        toast({
+          title: 'Erro',
+          description: 'Erro ao atualizar status do agendamento',
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Sucesso',
+          description: 'Status atualizado com sucesso!',
+        });
+        buscarAgendamentos();
+      }
+    } catch (error) {
+      console.error('Erro:', error);
+    }
+  };
+
+  const getStatusBadge = (status: AgendamentoItem['status']) => {
+    const variants = {
+      'agendado': 'outline',
+      'confirmado': 'default',
+      'em_andamento': 'secondary',
+      'concluido': 'success',
+      'cancelado': 'destructive',
     };
 
-    setAgendamentos(prev => [...prev, novoAgendamento]);
-    setShowForm(false);
-    setFormData({
-      medicoId: '',
-      dataHora: '',
-      motivo: '',
-      tipo: 'primeira_consulta',
-    });
+    const labels = {
+      'agendado': 'Agendado',
+      'confirmado': 'Confirmado',
+      'em_andamento': 'Em Andamento',
+      'concluido': 'Concluído',
+      'cancelado': 'Cancelado',
+    };
 
-    toast({
-      title: 'Agendamento solicitado!',
-      description: 'Aguarde a confirmação do médico.',
-    });
-  };
-
-  const handleAprovar = (id: string) => {
-    setAgendamentos(prev => 
-      prev.map(ag => 
-        ag.id === id ? { ...ag, status: 'aprovada' as const } : ag
-      )
+    return (
+      <Badge variant={variants[status] as any}>
+        {labels[status]}
+      </Badge>
     );
-    toast({
-      title: 'Agendamento aprovado!',
-      description: 'O paciente foi notificado.',
-    });
-  };
-
-  const handleRejeitar = (id: string) => {
-    setAgendamentos(prev => 
-      prev.map(ag => 
-        ag.id === id ? { ...ag, status: 'rejeitada' as const } : ag
-      )
-    );
-    toast({
-      title: 'Agendamento rejeitado',
-      description: 'O paciente foi notificado.',
-      variant: 'destructive',
-    });
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'pendente':
-        return <Badge variant="outline" className="text-warning">Pendente</Badge>;
-      case 'aprovada':
-        return <Badge variant="outline" className="text-success">Aprovada</Badge>;
-      case 'rejeitada':
-        return <Badge variant="destructive">Rejeitada</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
-    }
   };
 
   const formatDateTime = (dateTime: string) => {
     const date = new Date(dateTime);
     return {
       date: date.toLocaleDateString('pt-BR'),
-      time: date.toLocaleTimeString('pt-BR', { 
-        hour: '2-digit', 
-        minute: '2-digit' 
-      }),
+      time: date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
     };
   };
+
+  if (!user) return null;
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Agendamentos</h1>
+          <h1 className="text-3xl font-bold text-foreground">Agendamentos</h1>
           <p className="text-muted-foreground">
-            {user.role === 'paciente' && 'Solicite consultas e acompanhe o status'}
-            {user.role === 'medico' && 'Gerencie solicitações de consultas'}
-            {user.role === 'clinica' && 'Visualize todos os agendamentos'}
+            {user.role === 'paciente' && 'Gerencie suas consultas médicas'}
+            {user.role === 'medico' && 'Gerencie sua agenda de consultas'}
+            {user.role === 'clinica' && 'Visualize todos os agendamentos da clínica'}
           </p>
         </div>
         
         {user.role === 'paciente' && (
-          <Button onClick={() => setShowForm(true)}>
+          <Button onClick={() => setShowNovoAgendamento(true)}>
             <Plus className="w-4 h-4 mr-2" />
             Novo Agendamento
           </Button>
@@ -183,182 +229,200 @@ export const Agendamentos: React.FC = () => {
       </div>
 
       {/* Formulário de novo agendamento */}
-      {showForm && user.role === 'paciente' && (
+      {showNovoAgendamento && user.role === 'paciente' && (
         <Card>
           <CardHeader>
-            <CardTitle>Solicitar Agendamento</CardTitle>
-            <CardDescription>
-              Preencha os dados para solicitar uma consulta
-            </CardDescription>
+            <CardTitle>Novo Agendamento</CardTitle>
+            <CardDescription>Agende uma nova consulta médica</CardDescription>
           </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="medico">Médico</Label>
-                  <Select 
-                    value={formData.medicoId} 
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, medicoId: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione um médico" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {mockMedicos.map(medico => (
-                        <SelectItem key={medico.id} value={medico.id}>
-                          {medico.nome} - {medico.especialidade}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="tipo">Tipo de Consulta</Label>
-                  <Select 
-                    value={formData.tipo} 
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, tipo: value as any }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="primeira_consulta">Primeira Consulta</SelectItem>
-                      <SelectItem value="retorno">Retorno</SelectItem>
-                      <SelectItem value="urgencia">Urgência</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="dataHora">Data e Hora</Label>
+                <Label htmlFor="medico">Médico *</Label>
                 <Input
-                  id="dataHora"
-                  type="datetime-local"
-                  value={formData.dataHora}
-                  onChange={(e) => setFormData(prev => ({ ...prev, dataHora: e.target.value }))}
-                  min={new Date().toISOString().slice(0, 16)}
-                  required
+                  id="medico"
+                  placeholder="ID do médico (temporário)"
+                  value={novoAgendamento.medico_id}
+                  onChange={(e) => setNovoAgendamento(prev => ({ ...prev, medico_id: e.target.value }))}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="motivo">Motivo da Consulta</Label>
-                <Textarea
-                  id="motivo"
-                  placeholder="Descreva brevemente o motivo da consulta..."
-                  value={formData.motivo}
-                  onChange={(e) => setFormData(prev => ({ ...prev, motivo: e.target.value }))}
-                  required
+                <Label htmlFor="data">Data e Hora *</Label>
+                <Input
+                  id="data"
+                  type="datetime-local"
+                  value={novoAgendamento.data_agendamento}
+                  onChange={(e) => setNovoAgendamento(prev => ({ ...prev, data_agendamento: e.target.value }))}
                 />
               </div>
 
-              <div className="flex justify-end space-x-3">
-                <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
-                  Cancelar
-                </Button>
-                <Button type="submit">
-                  Solicitar Agendamento
-                </Button>
+              <div className="space-y-2">
+                <Label htmlFor="tipo">Tipo de Consulta *</Label>
+                <Select 
+                  value={novoAgendamento.tipo_consulta} 
+                  onValueChange={(value) => setNovoAgendamento(prev => ({ ...prev, tipo_consulta: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="primeira_consulta">Primeira Consulta</SelectItem>
+                    <SelectItem value="retorno">Retorno</SelectItem>
+                    <SelectItem value="urgencia">Urgência</SelectItem>
+                    <SelectItem value="exame">Exame</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-            </form>
+
+              <div className="space-y-2">
+                <Label htmlFor="duracao">Duração (minutos)</Label>
+                <Input
+                  id="duracao"
+                  type="number"
+                  min="15"
+                  max="120"
+                  step="15"
+                  value={novoAgendamento.duracao_minutos}
+                  onChange={(e) => setNovoAgendamento(prev => ({ ...prev, duracao_minutos: parseInt(e.target.value) }))}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="observacoes">Observações</Label>
+              <Textarea
+                id="observacoes"
+                placeholder="Descreva o motivo da consulta..."
+                value={novoAgendamento.observacoes}
+                onChange={(e) => setNovoAgendamento(prev => ({ ...prev, observacoes: e.target.value }))}
+              />
+            </div>
+
+            <div className="flex gap-2">
+              <Button onClick={criarAgendamento}>
+                <Check className="w-4 h-4 mr-2" />
+                Agendar
+              </Button>
+              <Button variant="outline" onClick={() => setShowNovoAgendamento(false)}>
+                <X className="w-4 h-4 mr-2" />
+                Cancelar
+              </Button>
+            </div>
           </CardContent>
         </Card>
       )}
 
       {/* Lista de agendamentos */}
-      <div className="space-y-4">
-        {agendamentos.map((agendamento) => {
-          const { date, time } = formatDateTime(agendamento.dataHora);
-          
-          return (
-            <Card key={agendamento.id}>
-              <CardContent className="p-6">
-                <div className="flex justify-between items-start">
-                  <div className="space-y-3 flex-1">
-                    <div className="flex items-center space-x-4">
-                      <div className="flex items-center space-x-2">
-                        <Calendar className="w-4 h-4 text-muted-foreground" />
-                        <span className="font-medium">{date}</span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Clock className="w-4 h-4 text-muted-foreground" />
-                        <span className="font-medium">{time}</span>
-                      </div>
-                      {getStatusBadge(agendamento.status)}
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="flex items-center space-x-2">
-                        <User className="w-4 h-4 text-muted-foreground" />
-                        <div>
-                          <p className="font-medium">{agendamento.pacienteNome}</p>
-                          <p className="text-sm text-muted-foreground">Paciente</p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center space-x-2">
-                        <Stethoscope className="w-4 h-4 text-muted-foreground" />
-                        <div>
-                          <p className="font-medium">{agendamento.medicoNome}</p>
-                          <p className="text-sm text-muted-foreground">{agendamento.especialidade}</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium">Motivo:</p>
-                      <p className="text-sm text-muted-foreground">{agendamento.motivo}</p>
-                    </div>
-                  </div>
-
-                  {/* Ações */}
-                  <div className="flex space-x-2 ml-4">
-                    {user.role === 'medico' && agendamento.status === 'pendente' && (
-                      <>
-                        <Button 
-                          size="sm" 
-                          variant="outline" 
-                          className="text-success hover:text-success"
-                          onClick={() => handleAprovar(agendamento.id)}
-                        >
-                          <Check className="w-4 h-4" />
-                        </Button>
-                        <Button 
-                          size="sm" 
-                          variant="outline" 
-                          className="text-destructive hover:text-destructive"
-                          onClick={() => handleRejeitar(agendamento.id)}
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
-                      </>
-                    )}
-                    
-                    <Button size="sm" variant="outline">
-                      <Eye className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-
-        {agendamentos.length === 0 && (
-          <Card>
-            <CardContent className="text-center py-12">
-              <Calendar className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium mb-2">Nenhum agendamento encontrado</h3>
+      <Card>
+        <CardHeader>
+          <CardTitle>
+            {user.role === 'paciente' && 'Minhas Consultas'}
+            {user.role === 'medico' && 'Minha Agenda'}
+            {user.role === 'clinica' && 'Todos os Agendamentos'}
+          </CardTitle>
+          <CardDescription>
+            {agendamentos.length} agendamento(s) encontrado(s)
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="flex justify-center items-center py-8">
+              <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+              <span className="ml-2 text-muted-foreground">Carregando...</span>
+            </div>
+          ) : agendamentos.length === 0 ? (
+            <div className="text-center py-8">
+              <Calendar className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+              <h3 className="text-lg font-medium text-foreground mb-2">Nenhum agendamento encontrado</h3>
               <p className="text-muted-foreground">
-                {user.role === 'paciente' && 'Solicite sua primeira consulta clicando no botão acima.'}
-                {user.role === 'medico' && 'Quando houver solicitações, elas aparecerão aqui.'}
+                {user.role === 'paciente' && 'Agende sua primeira consulta clicando em "Novo Agendamento"'}
+                {user.role === 'medico' && 'Você não possui consultas agendadas no momento'}
+                {user.role === 'clinica' && 'Não há agendamentos registrados na clínica'}
               </p>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {agendamentos.map((agendamento) => {
+                const { date, time } = formatDateTime(agendamento.data_agendamento);
+                
+                return (
+                  <div key={agendamento.id} className="border rounded-lg p-4 space-y-3">
+                    <div className="flex justify-between items-start">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <Calendar className="w-4 h-4 text-muted-foreground" />
+                          <span className="font-medium">{date}</span>
+                          <Clock className="w-4 h-4 text-muted-foreground ml-2" />
+                          <span>{time}</span>
+                        </div>
+                        
+                        <div className="flex items-center gap-2">
+                          <Stethoscope className="w-4 h-4 text-muted-foreground" />
+                          <span className="text-sm text-muted-foreground">
+                            {agendamento.tipo_consulta}
+                          </span>
+                        </div>
+
+                        {agendamento.observacoes && (
+                          <p className="text-sm text-muted-foreground">
+                            {agendamento.observacoes}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {getStatusBadge(agendamento.status)}
+                      </div>
+                    </div>
+
+                    {/* Ações para médicos */}
+                    {user.role === 'medico' && agendamento.status === 'agendado' && (
+                      <div className="flex gap-2 pt-2 border-t">
+                        <Button 
+                          size="sm" 
+                          onClick={() => atualizarStatusAgendamento(agendamento.id, 'confirmado')}
+                        >
+                          <Check className="w-4 h-4 mr-1" />
+                          Confirmar
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => atualizarStatusAgendamento(agendamento.id, 'cancelado')}
+                        >
+                          <X className="w-4 h-4 mr-1" />
+                          Cancelar
+                        </Button>
+                      </div>
+                    )}
+
+                    {/* Ações para pacientes */}
+                    {user.role === 'paciente' && (agendamento.status === 'agendado' || agendamento.status === 'confirmado') && (
+                      <div className="flex gap-2 pt-2 border-t">
+                        <Button size="sm" variant="outline">
+                          <Eye className="w-4 h-4 mr-1" />
+                          Ver Detalhes
+                        </Button>
+                        {agendamento.status === 'agendado' && (
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => atualizarStatusAgendamento(agendamento.id, 'cancelado')}
+                          >
+                            <X className="w-4 h-4 mr-1" />
+                            Cancelar
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
