@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -40,25 +41,36 @@ interface AgendamentoItem {
 export const Agendamentos: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
   const [agendamentos, setAgendamentos] = useState<AgendamentoItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [showNovoAgendamento, setShowNovoAgendamento] = useState(false);
+  const [medicos, setMedicos] = useState<{id: string, nome: string}[]>([]);
 
   // Estado para novo agendamento
   const [novoAgendamento, setNovoAgendamento] = useState({
-    medico_id: '',
+    medico_id: searchParams.get('medico') || '',
+    medico_nome: searchParams.get('nome') || '',
     data_agendamento: '',
     tipo_consulta: '',
     observacoes: '',
     duracao_minutos: 30,
   });
 
-  // Buscar agendamentos do usuário
+  // Buscar agendamentos do usuário e carregar médicos
   useEffect(() => {
     if (user) {
       buscarAgendamentos();
+      carregarMedicos();
     }
   }, [user]);
+
+  // Abrir automaticamente o formulário se vier da página de médicos
+  useEffect(() => {
+    if (searchParams.get('medico') && user?.role === 'paciente') {
+      setShowNovoAgendamento(true);
+    }
+  }, [searchParams, user]);
 
   const buscarAgendamentos = async () => {
     try {
@@ -91,6 +103,24 @@ export const Agendamentos: React.FC = () => {
       console.error('Erro:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const carregarMedicos = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, nome')
+        .eq('role', 'medico')
+        .eq('ativo', true);
+
+      if (error) {
+        console.error('Erro ao carregar médicos:', error);
+      } else {
+        setMedicos(data || []);
+      }
+    } catch (error) {
+      console.error('Erro:', error);
     }
   };
 
@@ -136,6 +166,7 @@ export const Agendamentos: React.FC = () => {
         setShowNovoAgendamento(false);
         setNovoAgendamento({
           medico_id: '',
+          medico_nome: '',
           data_agendamento: '',
           tipo_consulta: '',
           observacoes: '',
@@ -239,12 +270,43 @@ export const Agendamentos: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="medico">Médico *</Label>
-                <Input
-                  id="medico"
-                  placeholder="ID do médico (temporário)"
-                  value={novoAgendamento.medico_id}
-                  onChange={(e) => setNovoAgendamento(prev => ({ ...prev, medico_id: e.target.value }))}
-                />
+                {novoAgendamento.medico_nome ? (
+                  <div className="p-2 bg-muted rounded-md">
+                    <span className="font-medium">{novoAgendamento.medico_nome}</span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="ml-2 h-auto p-1"
+                      onClick={() => setNovoAgendamento(prev => ({ ...prev, medico_id: '', medico_nome: '' }))}
+                    >
+                      <X className="w-3 h-3" />
+                    </Button>
+                  </div>
+                ) : (
+                  <Select 
+                    value={novoAgendamento.medico_id} 
+                    onValueChange={(value) => {
+                      const medico = medicos.find(m => m.id === value);
+                      setNovoAgendamento(prev => ({ 
+                        ...prev, 
+                        medico_id: value,
+                        medico_nome: medico?.nome || ''
+                      }));
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione um médico" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {medicos.map(medico => (
+                        <SelectItem key={medico.id} value={medico.id}>
+                          {medico.nome}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
 
               <div className="space-y-2">

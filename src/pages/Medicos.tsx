@@ -350,7 +350,14 @@ export default function Medicos() {
                       <Eye className="w-4 h-4 mr-2" />
                       Ver Perfil
                     </Button>
-                    <Button size="sm" className="flex-1">
+                    <Button 
+                      size="sm" 
+                      className="flex-1"
+                      onClick={() => {
+                        // Redirecionar para agendamentos com ID do médico
+                        window.location.href = `/agendamentos?medico=${medico.id}&nome=${encodeURIComponent(medico.nome)}`;
+                      }}
+                    >
                       <Plus className="w-4 h-4 mr-2" />
                       Agendar
                     </Button>
