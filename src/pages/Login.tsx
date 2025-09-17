@@ -154,11 +154,25 @@ export const Login: React.FC = () => {
         </Card>
 
         {/* Informações para demo */}
-        <Card className="mt-4 border-warning/20 bg-warning/5">
-          <CardContent className="pt-4">
-            <p className="text-sm text-center text-muted-foreground">
-              <strong>Demo:</strong> Use qualquer email e senha para testar
-            </p>
+        <Card className="mt-4 border-primary/20 bg-primary/5">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base text-center">🎯 Como Testar</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3 text-sm">
+              <div>
+                <h4 className="font-medium text-foreground mb-1">1. Criar conta</h4>
+                <p className="text-muted-foreground">Use o botão "Cadastre-se" para criar um novo usuário</p>
+              </div>
+              <div>
+                <h4 className="font-medium text-foreground mb-1">2. Verificar email</h4>
+                <p className="text-muted-foreground">Confirme sua conta pelo email enviado</p>
+              </div>
+              <div>
+                <h4 className="font-medium text-foreground mb-1">3. Fazer login</h4>
+                <p className="text-muted-foreground">Use suas credenciais para acessar o sistema</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>

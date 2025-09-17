@@ -1,14 +1,30 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import React from 'react';
+import { Button } from '@/components/ui/button';
+import { Heart } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
-const Index = () => {
+export const Index: React.FC = () => {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 flex items-center justify-center p-4">
       <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
+        <div className="flex items-center justify-center w-20 h-20 bg-primary rounded-3xl mx-auto mb-6">
+          <Heart className="w-10 h-10 text-primary-foreground" />
+        </div>
+        
+        <h1 className="text-5xl font-bold text-foreground mb-4">TeleMed</h1>
+        <p className="text-xl text-muted-foreground mb-8 max-w-md mx-auto">
+          Plataforma completa de telemedicina para médicos, pacientes e clínicas
+        </p>
+        
+        <div className="space-y-3">
+          <Button asChild size="lg" className="w-full">
+            <Link to="/demo">Ver Demonstração</Link>
+          </Button>
+          <Button asChild variant="outline" size="lg" className="w-full">
+            <Link to="/login">Fazer Login</Link>
+          </Button>
+        </div>
       </div>
     </div>
   );
 };
-
-export default Index;

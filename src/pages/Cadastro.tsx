@@ -277,12 +277,23 @@ export const Cadastro: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Informações sobre campos obrigatórios */}
-        <Card className="mt-4 border-muted/20 bg-muted/5">
-          <CardContent className="pt-4">
-            <p className="text-sm text-center text-muted-foreground">
-              <strong>*</strong> Campos obrigatórios
-            </p>
+        {/* Informações sobre campos obrigatórios e demo */}
+        <Card className="mt-4 border-primary/20 bg-primary/5">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base text-center">📋 Informações</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2 text-sm">
+              <p className="text-muted-foreground">
+                <strong>*</strong> Campos obrigatórios
+              </p>
+              <p className="text-muted-foreground">
+                <strong>Demo:</strong> Use dados fictícios para testar
+              </p>
+              <p className="text-muted-foreground">
+                <strong>Email:</strong> Será enviado link de confirmação
+              </p>
+            </div>
           </CardContent>
         </Card>
       </div>

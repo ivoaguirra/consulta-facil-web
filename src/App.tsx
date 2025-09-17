@@ -6,6 +6,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { Layout } from "@/components/layout/Layout";
 import { Login } from "@/pages/Login";
 import { Cadastro } from "@/pages/Cadastro";
+import { Demo } from "@/pages/Demo";
 import { Dashboard } from "@/pages/Dashboard";
 import Medicos from "@/pages/Medicos";
 import { Agendamentos } from "@/pages/Agendamentos";
@@ -51,6 +52,7 @@ const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
 const AppRoutes = () => (
   <Routes>
+    <Route path="/demo" element={<Demo />} />
     <Route 
       path="/login" 
       element={
@@ -173,7 +175,7 @@ const AppRoutes = () => (
         </ProtectedRoute>
       } 
     />
-    <Route path="/" element={<Navigate to="/dashboard" replace />} />
+    <Route path="/" element={<Navigate to="/demo" replace />} />
     <Route path="*" element={<NotFound />} />
   </Routes>
 );
