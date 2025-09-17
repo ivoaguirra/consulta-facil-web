@@ -195,9 +195,9 @@ const mockMedicos: Medico[] = [
 export default function Medicos() {
   const { toast } = useToast();
   const [medicos, setMedicos] = useState<Medico[]>(mockMedicos);
-  const [filtroEspecialidade, setFiltroEspecialidade] = useState('');
+  const [filtroEspecialidade, setFiltroEspecialidade] = useState('todas');
   const [filtroCidade, setFiltroCidade] = useState('');
-  const [filtroOnline, setFiltroOnline] = useState('');
+  const [filtroOnline, setFiltroOnline] = useState('todos');
   const [busca, setBusca] = useState('');
   const [medicoSelecionado, setMedicoSelecionado] = useState<Medico | null>(null);
   const [dialogAberto, setDialogAberto] = useState(false);
@@ -205,9 +205,9 @@ export default function Medicos() {
   const medicosFiltrados = medicos.filter(medico => {
     const matchBusca = medico.nome.toLowerCase().includes(busca.toLowerCase()) ||
                       medico.especialidade.toLowerCase().includes(busca.toLowerCase());
-    const matchEspecialidade = !filtroEspecialidade || medico.especialidades.includes(filtroEspecialidade);
+    const matchEspecialidade = !filtroEspecialidade || filtroEspecialidade === 'todas' || medico.especialidades.includes(filtroEspecialidade);
     const matchCidade = !filtroCidade || medico.endereco.cidade.toLowerCase().includes(filtroCidade.toLowerCase());
-    const matchOnline = !filtroOnline || 
+    const matchOnline = !filtroOnline || filtroOnline === 'todos' || 
                        (filtroOnline === 'online' && medico.online) ||
                        (filtroOnline === 'presencial' && medico.presencial);
 
@@ -255,7 +255,7 @@ export default function Medicos() {
                     <SelectValue placeholder="Todas as especialidades" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todas as especialidades</SelectItem>
+                    <SelectItem value="todas">Todas as especialidades</SelectItem>
                     {especialidadesDisponiveis.map(esp => (
                       <SelectItem key={esp} value={esp}>{esp}</SelectItem>
                     ))}
@@ -279,7 +279,7 @@ export default function Medicos() {
                     <SelectValue placeholder="Todos os tipos" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todos os tipos</SelectItem>
+                    <SelectItem value="todos">Todos os tipos</SelectItem>
                     <SelectItem value="online">Online</SelectItem>
                     <SelectItem value="presencial">Presencial</SelectItem>
                   </SelectContent>
