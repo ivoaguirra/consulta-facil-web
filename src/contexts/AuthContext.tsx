@@ -30,77 +30,44 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   console.log('AuthProvider - Current state:', authState);
 
   useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
-
-    // Safety timeout - ensure loading never lasts more than 10 seconds
-    const safetyTimeout = setTimeout(() => {
-      console.warn('Auth loading timeout - forcing loading to false');
-      setAuthState(prev => ({ ...prev, isLoading: false }));
-    }, 10000);
-
     // Configurar listener de autenticação do Supabase
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         console.log('Auth event:', event, session);
-        clearTimeout(safetyTimeout);
         
         if (session?.user) {
-          // Set loading false immediately, then try to fetch profile async
-          setAuthState({
-            user: null,
-            isAuthenticated: false,
-            isLoading: false,
-          });
+          // Buscar perfil do usuário
+          const { data: profile, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
 
-          // Fetch profile in background with timeout
-          setTimeout(async () => {
-            try {
-              const { data: profile, error } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', session.user.id)
-                .single();
+          if (profile && !error) {
+            const user: User = {
+              id: profile.id,
+              email: profile.email,
+              nome: profile.nome,
+              role: profile.role,
+              telefone: profile.telefone,
+              cpf: profile.cpf,
+              crm: profile.crm,
+              especialidade: profile.especialidade,
+              clinicaId: profile.clinica_id,
+              endereco: profile.endereco as any,
+              dataNascimento: profile.data_nascimento,
+              createdAt: profile.created_at,
+              updatedAt: profile.updated_at,
+            };
 
-              if (profile && !error) {
-                const user: User = {
-                  id: profile.id,
-                  email: profile.email,
-                  nome: profile.nome,
-                  role: profile.role,
-                  telefone: profile.telefone,
-                  cpf: profile.cpf,
-                  crm: profile.crm,
-                  especialidade: profile.especialidade,
-                  clinicaId: profile.clinica_id,
-                  endereco: profile.endereco as any,
-                  dataNascimento: profile.data_nascimento,
-                  createdAt: profile.created_at,
-                  updatedAt: profile.updated_at,
-                };
-
-                setAuthState({
-                  user,
-                  isAuthenticated: true,
-                  isLoading: false,
-                });
-              } else {
-                console.error('Profile not found or error:', error);
-                // Stay unauthenticated but not loading
-                setAuthState({
-                  user: null,
-                  isAuthenticated: false,
-                  isLoading: false,
-                });
-              }
-            } catch (error) {
-              console.error('Error fetching profile:', error);
-              setAuthState({
-                user: null,
-                isAuthenticated: false,
-                isLoading: false,
-              });
-            }
-          }, 0);
+            setAuthState({
+              user,
+              isAuthenticated: true,
+              isLoading: false,
+            });
+          } else {
+            console.error('Erro ao buscar perfil:', error);
+          }
         } else {
           setAuthState({
             user: null,
@@ -113,16 +80,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Verificar sessão inicial
     supabase.auth.getSession().then(({ data: { session } }) => {
-      clearTimeout(safetyTimeout);
       if (!session) {
         setAuthState(prev => ({ ...prev, isLoading: false }));
       }
     });
 
-    return () => {
-      subscription.unsubscribe();
-      clearTimeout(safetyTimeout);
-    };
+    return () => subscription.unsubscribe();
   }, []);
 
   const login = async (email: string, password: string, role: UserRole): Promise<boolean> => {
