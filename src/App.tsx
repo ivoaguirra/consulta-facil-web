@@ -2,6 +2,7 @@ import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Index } from "@/pages/Index";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { Layout } from "@/components/layout/Layout";
 import { Login } from "@/pages/Login";
@@ -193,14 +194,14 @@ const AppRoutes = () => (
         </ProtectedRoute>
       } 
     />
-    <Route path="/" element={<Navigate to="/demo" replace />} />
+    <Route path="/" element={<Index />} />
     <Route path="*" element={<NotFound />} />
   </Routes>
 );
 
 const App = () => (
   <AuthProvider>
-    <BrowserRouter>
+    <BrowserRouter future={{ v7_startTransition: true }}>
       <Toaster />
       <Sonner />
       <AppRoutes />
