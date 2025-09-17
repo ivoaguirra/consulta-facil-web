@@ -5,6 +5,8 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { Layout } from "@/components/layout/Layout";
 import { Login } from "@/pages/Login";
+import { LoginSimple } from "@/pages/LoginSimple";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Cadastro } from "@/pages/Cadastro";
 import { Demo } from "@/pages/Demo";
 import { Dashboard } from "@/pages/Dashboard";
@@ -59,7 +61,7 @@ const AppRoutes = () => (
       path="/login" 
       element={
         <PublicRoute>
-          <Login />
+          <LoginSimple />
         </PublicRoute>
       } 
     />
@@ -199,13 +201,15 @@ const AppRoutes = () => (
 );
 
 const App = () => (
-  <AuthProvider>
-    <BrowserRouter>
-      <Toaster />
-      <Sonner />
-      <AppRoutes />
-    </BrowserRouter>
-  </AuthProvider>
+  <ErrorBoundary>
+    <AuthProvider>
+      <BrowserRouter>
+        <Toaster />
+        <Sonner />
+        <AppRoutes />
+      </BrowserRouter>
+    </AuthProvider>
+  </ErrorBoundary>
 );
 
 export default App;
