@@ -83,6 +83,12 @@ const navigationItems: NavItem[] = [
     icon: Clock,
     roles: ['medico', 'paciente'],
   },
+  {
+    href: '/procedimentos',
+    label: 'Procedimentos',
+    icon: UserPlus,
+    roles: ['medico', 'clinica'],
+  },
 ];
 
 export const Sidebar: React.FC = () => {
