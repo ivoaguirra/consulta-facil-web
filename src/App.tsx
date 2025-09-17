@@ -5,6 +5,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { Layout } from "@/components/layout/Layout";
 import { Login } from "@/pages/Login";
+import { Cadastro } from "@/pages/Cadastro";
 import { Dashboard } from "@/pages/Dashboard";
 import Medicos from "@/pages/Medicos";
 import { Agendamentos } from "@/pages/Agendamentos";
@@ -55,6 +56,14 @@ const AppRoutes = () => (
       element={
         <PublicRoute>
           <Login />
+        </PublicRoute>
+      } 
+    />
+    <Route 
+      path="/cadastro" 
+      element={
+        <PublicRoute>
+          <Cadastro />
         </PublicRoute>
       } 
     />
