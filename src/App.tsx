@@ -14,6 +14,7 @@ import { Pagamentos } from "@/pages/Pagamentos";
 import { Clinicas } from "@/pages/Clinicas";
 import Pacientes from "@/pages/Pacientes";
 import DocumentosMedicos from "@/pages/DocumentosMedicos";
+import Historico from "@/pages/Historico";
 import NotFound from "@/pages/NotFound";
 
 // Componente para rotas protegidas
@@ -139,6 +140,16 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute>
           <DocumentosMedicos />
+        </ProtectedRoute>
+      } 
+    />
+    <Route 
+      path="/historico" 
+      element={
+        <ProtectedRoute>
+          <Layout>
+            <Historico />
+          </Layout>
         </ProtectedRoute>
       } 
     />
