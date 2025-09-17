@@ -18,6 +18,7 @@ import Pacientes from "@/pages/Pacientes";
 import DocumentosMedicos from "@/pages/DocumentosMedicos";
 import Historico from "@/pages/Historico";
 import { Procedimentos } from "@/pages/Procedimentos";
+import TesteCamera from "@/pages/TesteCamera";
 import NotFound from "@/pages/NotFound";
 
 // Componente para rotas protegidas
@@ -172,6 +173,14 @@ const AppRoutes = () => (
           <Layout>
             <Procedimentos />
           </Layout>
+        </ProtectedRoute>
+      } 
+    />
+    <Route 
+      path="/teste-camera" 
+      element={
+        <ProtectedRoute>
+          <TesteCamera />
         </ProtectedRoute>
       } 
     />

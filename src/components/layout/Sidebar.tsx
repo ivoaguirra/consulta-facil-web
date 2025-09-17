@@ -12,7 +12,8 @@ import {
   Stethoscope,
   Building2,
   UserPlus,
-  Clock
+  Clock,
+  TestTube
 } from 'lucide-react';
 
 interface NavItem {
@@ -87,6 +88,12 @@ const navigationItems: NavItem[] = [
     href: '/procedimentos',
     label: 'Procedimentos',
     icon: UserPlus,
+    roles: ['medico', 'clinica'],
+  },
+  {
+    href: '/teste-camera',
+    label: 'Teste de Câmera',
+    icon: TestTube,
     roles: ['medico', 'clinica'],
   },
 ];
