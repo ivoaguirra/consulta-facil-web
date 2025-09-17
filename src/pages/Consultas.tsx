@@ -24,6 +24,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { TesteDispositivos } from '@/components/consulta/TesteDispositivos';
 import { ReceituarioDigital } from '@/components/receituario/ReceituarioDigital';
+import { useNavigate } from 'react-router-dom';
 
 interface ConsultaItem {
   id: string;
@@ -61,6 +62,7 @@ const mockConsultas: ConsultaItem[] = [
 export const Consultas: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [consultas, setConsultas] = useState<ConsultaItem[]>(mockConsultas);
   const [consultaAtiva, setConsultaAtiva] = useState<ConsultaItem | null>(null);
   const [dispositivosTestados, setDispositivosTestados] = useState(false);
@@ -235,11 +237,22 @@ export const Consultas: React.FC = () => {
                   {/* Ações */}
                   <div className="flex space-x-2 ml-4">
                     {consulta.status === 'agendada' && podeIniciar && !consultaAtiva && (
+                      <Button 
+                        size="sm" 
+                        className="bg-success hover:bg-success/90"
+                        onClick={() => navigate(`/video/${consulta.id}`)}
+                      >
+                        <Video className="w-4 h-4 mr-2" />
+                        Iniciar Videochamada
+                      </Button>
+                    )}
+
+                    {consulta.status === 'agendada' && podeIniciar && !consultaAtiva && (
                       <Dialog>
                         <DialogTrigger asChild>
-                          <Button size="sm" className="bg-success hover:bg-success/90">
-                            <Video className="w-4 h-4 mr-2" />
-                            Iniciar
+                          <Button size="sm" variant="outline">
+                            <Settings className="w-4 h-4 mr-2" />
+                            Testar Dispositivos
                           </Button>
                         </DialogTrigger>
                         <DialogContent className="max-w-6xl h-[90vh]">
