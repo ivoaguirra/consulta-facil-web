@@ -26,9 +26,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     isLoading: true,
   });
 
-  // Debug logging
-  console.log('AuthProvider - Current state:', authState);
-
   useEffect(() => {
     // Configurar listener de autenticação do Supabase
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
