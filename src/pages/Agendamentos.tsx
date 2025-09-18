@@ -47,7 +47,7 @@ export const Agendamentos: React.FC = () => {
   const [agendamentos, setAgendamentos] = useState<AgendamentoItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [showNovoAgendamento, setShowNovoAgendamento] = useState(false);
-  const [medicos, setMedicos] = useState<{id: string, nome: string}[]>([]);
+  const [medicos, setMedicos] = useState<{id: string, nome: string, especialidade?: string}[]>([]);
 
   // Estado para novo agendamento
   const [novoAgendamento, setNovoAgendamento] = useState({
@@ -68,7 +68,7 @@ export const Agendamentos: React.FC = () => {
     }
   }, [user]);
 
-  // Abrir automaticamente o formulário se vier da página de médicos
+  // Abrir automaticamente o formulário se vier da página de médicos  
   useEffect(() => {
     const medicoParam = searchParams.get('medico');
     const nomeParam = searchParams.get('nome');
@@ -77,9 +77,12 @@ export const Agendamentos: React.FC = () => {
     console.log('Médicos disponíveis:', medicos);
     
     if (medicoParam && user?.role === 'paciente') {
-      // Se temos médicos carregados, buscar o médico correto
+      setShowNovoAgendamento(true);
+      
+      // Se temos médicos carregados e um nome na URL, buscar o médico correto
       if (medicos.length > 0 && nomeParam) {
-        const medico = medicos.find(m => m.nome === decodeURIComponent(nomeParam));
+        const nomeDecodificado = decodeURIComponent(nomeParam);
+        const medico = medicos.find(m => m.nome === nomeDecodificado);
         console.log('Médico encontrado:', medico);
         
         if (medico) {
@@ -88,9 +91,21 @@ export const Agendamentos: React.FC = () => {
             medico_id: medico.id,
             medico_nome: medico.nome 
           }));
+        } else {
+          // Se não encontrou exato, buscar similar
+          const medicoSimilar = medicos.find(m => 
+            m.nome.toLowerCase().includes(nomeDecodificado.toLowerCase()) ||
+            nomeDecodificado.toLowerCase().includes(m.nome.toLowerCase())
+          );
+          if (medicoSimilar) {
+            setNovoAgendamento(prev => ({ 
+              ...prev, 
+              medico_id: medicoSimilar.id,
+              medico_nome: medicoSimilar.nome 
+            }));
+          }
         }
       }
-      setShowNovoAgendamento(true);
     }
   }, [searchParams, user, medicos]);
 
@@ -130,15 +145,20 @@ export const Agendamentos: React.FC = () => {
 
   const carregarMedicos = async () => {
     try {
+      console.log('Carregando médicos...');
+      
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, nome')
+        .select('id, nome, especialidade')
         .eq('role', 'medico')
         .eq('ativo', true);
+
+      console.log('Resultado da consulta médicos:', { data, error });
 
       if (error) {
         console.error('Erro ao carregar médicos:', error);
       } else {
+        console.log('Médicos carregados:', data);
         setMedicos(data || []);
       }
     } catch (error) {
