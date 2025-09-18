@@ -34,7 +34,7 @@ export const useJitsiMeet = () => {
       }
 
       const response = await fetch(
-        `https://qbsdpfachnqovopfqinj.supabase.co/functions/v1/gerar-sala-jitsi/${consultaId}`,
+        `https://sqnukbqodqqmrwsggtcv.supabase.co/functions/v1/gerar-sala-jitsi/${consultaId}`,
         {
           method: 'GET',
           headers: {

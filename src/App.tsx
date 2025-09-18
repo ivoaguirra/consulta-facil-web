@@ -187,7 +187,7 @@ const AppRoutes = () => (
       } 
     />
     <Route 
-      path="/video/:consultaId" 
+      path="/videochamada/:consultaId" 
       element={
         <ProtectedRoute>
           <Videochamada />

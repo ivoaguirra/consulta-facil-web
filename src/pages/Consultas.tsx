@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -19,54 +20,104 @@ import {
   VideoOff,
   Monitor,
   Settings,
-  Pill
+  Pill,
+  Loader2
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { TesteDispositivos } from '@/components/consulta/TesteDispositivos';
 import { ReceituarioDigital } from '@/components/receituario/ReceituarioDigital';
 import { useNavigate } from 'react-router-dom';
 
+// Interface atualizada para usar dados do Supabase
 interface ConsultaItem {
   id: string;
-  pacienteNome: string;
-  medicoNome: string;
-  especialidade: string;
-  dataHora: string;
-  status: 'agendada' | 'em_andamento' | 'concluida';
-  linkVideoconferencia: string;
-  duracao?: number;
+  paciente_id: string;
+  medico_id: string;
+  clinica_id?: string;
+  data_agendamento: string;
+  duracao_minutos: number;
+  tipo_consulta: string;
+  status: 'agendado' | 'confirmado' | 'em_andamento' | 'concluido' | 'cancelado';
+  observacoes?: string;
+  valor?: number;
+  // Campos calculados baseados nos profiles
+  pacienteNome?: string;
+  medicoNome?: string;
+  especialidade?: string;
 }
-
-const mockConsultas: ConsultaItem[] = [
-  {
-    id: '1',
-    pacienteNome: 'Maria Santos',
-    medicoNome: 'Dr. João Silva',
-    especialidade: 'Cardiologia',
-    dataHora: '2024-03-15T14:30:00',
-    status: 'agendada',
-    linkVideoconferencia: 'https://meet.jit.si/telemed-consulta-1',
-  },
-  {
-    id: '2',
-    pacienteNome: 'Pedro Costa',
-    medicoNome: 'Dr. João Silva',
-    especialidade: 'Cardiologia',
-    dataHora: '2024-03-14T10:00:00',
-    status: 'concluida',
-    linkVideoconferencia: 'https://meet.jit.si/telemed-consulta-2',
-    duracao: 35,
-  },
-];
 
 export const Consultas: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [consultas, setConsultas] = useState<ConsultaItem[]>(mockConsultas);
+  const [consultas, setConsultas] = useState<ConsultaItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [consultaAtiva, setConsultaAtiva] = useState<ConsultaItem | null>(null);
   const [dispositivosTestados, setDispositivosTestados] = useState(false);
   const [mostrarReceituario, setMostrarReceituario] = useState(false);
+
+  // Carregar consultas do Supabase
+  useEffect(() => {
+    if (user) {
+      carregarConsultas();
+    }
+  }, [user]);
+
+  const carregarConsultas = async () => {
+    try {
+      setLoading(true);
+      
+      let query = supabase
+        .from('agendamentos')
+        .select(`
+          *,
+          paciente:profiles!agendamentos_paciente_id_fkey(nome, especialidade),
+          medico:profiles!agendamentos_medico_id_fkey(nome, especialidade)
+        `);
+
+      // Filtrar por role do usuário
+      if (user?.role === 'paciente') {
+        query = query.eq('paciente_id', user.id);
+      } else if (user?.role === 'medico') {
+        query = query.eq('medico_id', user.id);
+      }
+
+      const { data, error } = await query.order('data_agendamento', { ascending: true });
+
+      if (error) {
+        console.error('Erro ao carregar consultas:', error);
+        toast({
+          title: 'Erro',
+          description: 'Não foi possível carregar as consultas.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      // Transformar dados para interface esperada
+      const consultasFormatadas: ConsultaItem[] = (data || []).map(item => ({
+        id: item.id,
+        paciente_id: item.paciente_id,
+        medico_id: item.medico_id,
+        clinica_id: item.clinica_id,
+        data_agendamento: item.data_agendamento,
+        duracao_minutos: item.duracao_minutos || 30,
+        tipo_consulta: item.tipo_consulta,
+        status: item.status as ConsultaItem['status'],
+        observacoes: item.observacoes,
+        valor: item.valor,
+        pacienteNome: (item as any).paciente?.nome || 'Paciente não identificado',
+        medicoNome: (item as any).medico?.nome || 'Médico não identificado',
+        especialidade: (item as any).medico?.especialidade || 'Especialidade não informada',
+      }));
+
+      setConsultas(consultasFormatadas);
+    } catch (error) {
+      console.error('Erro ao carregar consultas:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (!user) return null;
 
@@ -91,7 +142,7 @@ export const Consultas: React.FC = () => {
     setConsultas(prev => 
       prev.map(c => 
         c.id === consultaAtiva.id 
-          ? { ...c, status: 'concluida' as const, duracao: 30 } 
+          ? { ...c, status: 'concluido' as const, duracao_minutos: 30 } 
           : c
       )
     );
@@ -104,12 +155,16 @@ export const Consultas: React.FC = () => {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'agendada':
+      case 'agendado':
         return <Badge variant="outline" className="text-primary">Agendada</Badge>;
+      case 'confirmado':
+        return <Badge variant="outline" className="text-blue-600">Confirmada</Badge>;
       case 'em_andamento':
         return <Badge variant="outline" className="text-warning">Em Andamento</Badge>;
-      case 'concluida':
+      case 'concluido':
         return <Badge variant="outline" className="text-success">Concluída</Badge>;
+      case 'cancelado':
+        return <Badge variant="outline" className="text-destructive">Cancelada</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -126,20 +181,34 @@ export const Consultas: React.FC = () => {
     };
   };
 
-  const isConsultaDisponivel = (dataHora: string) => {
-    const consultaDate = new Date(dataHora);
+  const isConsultaDisponivel = (dataAgendamento: string) => {
+    const consultaDate = new Date(dataAgendamento);
     const agora = new Date();
     const diferencaMinutos = (consultaDate.getTime() - agora.getTime()) / (1000 * 60);
     return diferencaMinutos <= 15 && diferencaMinutos >= -60; // 15 min antes até 1h depois
   };
+
+  if (loading) {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <div>
+          <h1 className="text-3xl font-bold">Consultas</h1>
+          <p className="text-muted-foreground">Carregando suas consultas...</p>
+        </div>
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="w-8 h-8 animate-spin" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
         <h1 className="text-3xl font-bold">Consultas</h1>
         <p className="text-muted-foreground">
-          {user.role === 'paciente' && 'Participe das suas consultas por videoconferência'}
-          {user.role === 'medico' && 'Realize atendimentos virtuais com ferramentas avançadas'}
+          {user?.role === 'paciente' && 'Participe das suas consultas por videoconferência'}
+          {user?.role === 'medico' && 'Realize atendimentos virtuais com ferramentas avançadas'}
         </p>
       </div>
 
@@ -189,8 +258,8 @@ export const Consultas: React.FC = () => {
       {/* Lista de Consultas */}
       <div className="space-y-4">
         {consultas.map((consulta) => {
-          const { date, time } = formatDateTime(consulta.dataHora);
-          const podeIniciar = isConsultaDisponivel(consulta.dataHora);
+          const { date, time } = formatDateTime(consulta.data_agendamento);
+          const podeIniciar = isConsultaDisponivel(consulta.data_agendamento);
           
           return (
             <Card key={consulta.id} className="animate-fade-in hover:shadow-lg transition-all duration-300">
@@ -222,11 +291,11 @@ export const Consultas: React.FC = () => {
                         </div>
                       </div>
 
-                      {consulta.duracao && (
+                      {consulta.duracao_minutos && (
                         <div className="flex items-center space-x-2">
                           <Clock className="w-4 h-4 text-muted-foreground" />
                           <div>
-                            <p className="font-medium">{consulta.duracao} minutos</p>
+                            <p className="font-medium">{consulta.duracao_minutos} minutos</p>
                             <p className="text-sm text-muted-foreground">Duração</p>
                           </div>
                         </div>
@@ -236,18 +305,18 @@ export const Consultas: React.FC = () => {
 
                   {/* Ações */}
                   <div className="flex space-x-2 ml-4">
-                    {consulta.status === 'agendada' && podeIniciar && !consultaAtiva && (
+                    {(consulta.status === 'agendado' || consulta.status === 'confirmado') && podeIniciar && !consultaAtiva && (
                       <Button 
                         size="sm" 
                         className="bg-success hover:bg-success/90"
-                        onClick={() => navigate(`/video/${consulta.id}`)}
+                        onClick={() => navigate(`/videochamada/${consulta.id}`)}
                       >
                         <Video className="w-4 h-4 mr-2" />
                         Iniciar Videochamada
                       </Button>
                     )}
 
-                    {consulta.status === 'agendada' && podeIniciar && !consultaAtiva && (
+                    {(consulta.status === 'agendado' || consulta.status === 'confirmado') && podeIniciar && !consultaAtiva && (
                       <Dialog>
                         <DialogTrigger asChild>
                           <Button size="sm" variant="outline">
@@ -284,16 +353,11 @@ export const Consultas: React.FC = () => {
                               </TabsContent>
 
                               <TabsContent value="consulta" className="mt-4 space-y-4">
-                                {/* Interface de Videoconferência */}
                                 <div className="bg-gray-900 rounded-lg h-96 flex items-center justify-center relative animate-fade-in">
-                                  <iframe
-                                    src={consulta.linkVideoconferencia}
-                                    width="100%"
-                                    height="100%"
-                                    className="rounded-lg"
-                                    allow="camera; microphone; fullscreen; speaker; display-capture"
-                                    title="Videoconferência TeleMed"
-                                  />
+                                  <div className="text-center text-white">
+                                    <Video className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                                    <p>Clique em "Conectar" para iniciar a videochamada</p>
+                                  </div>
                                 </div>
                                 
                                 {/* Controles */}
@@ -356,9 +420,9 @@ export const Consultas: React.FC = () => {
                               <TabsContent value="receituario" className="mt-4">
                                 <ReceituarioDigital
                                   consultaId={consulta.id}
-                                  pacienteNome={consulta.pacienteNome}
-                                  medicoNome={consulta.medicoNome}
-                                  especialidade={consulta.especialidade}
+                                  pacienteNome={consulta.pacienteNome || ''}
+                                  medicoNome={consulta.medicoNome || ''}
+                                  especialidade={consulta.especialidade || ''}
                                   onSave={(receita) => {
                                     toast({
                                       title: 'Receita salva',
@@ -384,20 +448,21 @@ export const Consultas: React.FC = () => {
                         size="sm" 
                         variant="outline" 
                         className="text-warning hover:text-warning"
+                        onClick={() => navigate(`/videochamada/${consulta.id}`)}
                       >
                         <Video className="w-4 h-4 mr-2" />
                         Retomar
                       </Button>
                     )}
 
-                    {consulta.status === 'concluida' && user.role === 'medico' && (
+                    {consulta.status === 'concluido' && user?.role === 'medico' && (
                       <Button size="sm" variant="outline">
                         <FileText className="w-4 h-4 mr-2" />
                         Prontuário
                       </Button>
                     )}
 
-                    {!podeIniciar && consulta.status === 'agendada' && (
+                    {!podeIniciar && (consulta.status === 'agendado' || consulta.status === 'confirmado') && (
                       <Button size="sm" variant="outline" disabled>
                         <Clock className="w-4 h-4 mr-2" />
                         Aguardar
@@ -413,16 +478,50 @@ export const Consultas: React.FC = () => {
         {consultas.length === 0 && (
           <Card>
             <CardContent className="text-center py-12">
-              <Video className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium mb-2">Nenhuma consulta encontrada</h3>
+              <Stethoscope className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium mb-2">Nenhuma consulta agendada</h3>
               <p className="text-muted-foreground">
-                {user.role === 'paciente' && 'Suas consultas agendadas aparecerão aqui.'}
-                {user.role === 'medico' && 'Suas consultas com pacientes aparecerão aqui.'}
+                {user.role === 'paciente' 
+                  ? 'Quando você agendar uma consulta, ela aparecerá aqui.'
+                  : 'Quando houver consultas agendadas com você, elas aparecerão aqui.'
+                }
               </p>
             </CardContent>
           </Card>
         )}
       </div>
+
+      {/* Dialog do Receituário */}
+      <Dialog open={mostrarReceituario} onOpenChange={setMostrarReceituario}>
+        <DialogContent className="max-w-4xl h-[90vh]">
+          <DialogHeader>
+            <DialogTitle>Receituário Digital</DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-auto">
+            {consultaAtiva && (
+              <ReceituarioDigital
+                consultaId={consultaAtiva.id}
+                pacienteNome={consultaAtiva.pacienteNome || ''}
+                medicoNome={consultaAtiva.medicoNome || ''}
+                especialidade={consultaAtiva.especialidade || ''}
+                onSave={(receita) => {
+                  toast({
+                    title: 'Receita salva',
+                    description: 'A receita foi salva com sucesso.'
+                  });
+                }}
+                onSend={(receita) => {
+                  toast({
+                    title: 'Receita enviada',
+                    description: 'A receita foi enviada para o paciente.'
+                  });
+                  setMostrarReceituario(false);
+                }}
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
