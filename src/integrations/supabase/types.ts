@@ -106,6 +106,77 @@ export type Database = {
         }
         Relationships: []
       }
+      consultas: {
+        Row: {
+          agendamento_id: string | null
+          clinica_id: string | null
+          created_at: string
+          data_fim: string | null
+          data_inicio: string
+          duracao_minutos: number | null
+          gravacao_url: string | null
+          id: string
+          medico_id: string
+          observacoes_medico: string | null
+          observacoes_paciente: string | null
+          paciente_id: string
+          problemas_tecnicos: string | null
+          qualidade_chamada: number | null
+          status: string
+          tipo_consulta: string
+          updated_at: string
+          valor: number | null
+        }
+        Insert: {
+          agendamento_id?: string | null
+          clinica_id?: string | null
+          created_at?: string
+          data_fim?: string | null
+          data_inicio?: string
+          duracao_minutos?: number | null
+          gravacao_url?: string | null
+          id?: string
+          medico_id: string
+          observacoes_medico?: string | null
+          observacoes_paciente?: string | null
+          paciente_id: string
+          problemas_tecnicos?: string | null
+          qualidade_chamada?: number | null
+          status?: string
+          tipo_consulta: string
+          updated_at?: string
+          valor?: number | null
+        }
+        Update: {
+          agendamento_id?: string | null
+          clinica_id?: string | null
+          created_at?: string
+          data_fim?: string | null
+          data_inicio?: string
+          duracao_minutos?: number | null
+          gravacao_url?: string | null
+          id?: string
+          medico_id?: string
+          observacoes_medico?: string | null
+          observacoes_paciente?: string | null
+          paciente_id?: string
+          problemas_tecnicos?: string | null
+          qualidade_chamada?: number | null
+          status?: string
+          tipo_consulta?: string
+          updated_at?: string
+          valor?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consultas_agendamento_id_fkey"
+            columns: ["agendamento_id"]
+            isOneToOne: false
+            referencedRelation: "agendamentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           ativo: boolean | null

@@ -19,6 +19,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useJitsiMeet } from '@/hooks/useJitsiMeet';
 import { JitsiMeetComponent } from '@/components/videochamada/JitsiMeetComponent';
 import { TesteDispositivos } from '@/components/consulta/TesteDispositivos';
+import { ConclusaoConsulta } from '@/components/videochamada/ConclusaoConsulta';
+import { supabase } from '@/integrations/supabase/client';
 
 export const Videochamada: React.FC = () => {
   const { consultaId } = useParams<{ consultaId: string }>();
@@ -39,6 +41,7 @@ export const Videochamada: React.FC = () => {
   const [etapaAtual, setEtapaAtual] = useState<'dispositivos' | 'videochamada'>('dispositivos');
   const [dispositivosTestados, setDispositivosTestados] = useState(false);
   const [duracaoConsulta, setDuracaoConsulta] = useState(0);
+  const [mostrarConclusao, setMostrarConclusao] = useState(false);
 
   useEffect(() => {
     if (!consultaId) {
@@ -101,12 +104,54 @@ export const Videochamada: React.FC = () => {
   };
 
   const handleSairVideochamada = () => {
-    desconectarSala();
-    toast({
-      title: 'Consulta finalizada',
-      description: `Duração: ${Math.floor(duracaoConsulta / 60)}min ${duracaoConsulta % 60}s`,
-    });
-    navigate('/consultas');
+    setMostrarConclusao(true);
+  };
+
+  const handleConcluirConsulta = async (dados: {
+    observacoesMedico?: string;
+    observacoesPaciente?: string;
+    problemasTecnicos?: string;
+    qualidadeChamada: number;
+  }) => {
+    try {
+      // Concluir consulta via Edge Function
+      const { data, error } = await supabase.functions.invoke('concluir-consulta', {
+        body: {
+          consultaId: consultaId,
+          duracaoMinutos: Math.floor(duracaoConsulta / 60),
+          ...dados
+        }
+      });
+
+      if (error) {
+        console.error('Erro ao concluir consulta:', error);
+        toast({
+          title: "Erro ao finalizar consulta",
+          description: "Ocorreu um erro ao salvar os dados da consulta",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      toast({
+        title: "Consulta finalizada com sucesso",
+        description: `Duração: ${formatarDuracao(duracaoConsulta)}`,
+      });
+
+      desconectarSala();
+      navigate("/consultas");
+    } catch (error) {
+      console.error('Erro ao concluir consulta:', error);
+      toast({
+        title: "Erro ao finalizar consulta",
+        description: "Ocorreu um erro ao salvar os dados da consulta",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleCancelarConclusao = () => {
+    setMostrarConclusao(false);
   };
 
   const handleVoltarConsultas = () => {
@@ -266,6 +311,16 @@ export const Videochamada: React.FC = () => {
               </div>
             )}
           </>
+        )}
+
+        {/* Modal de conclusão */}
+        {mostrarConclusao && (
+          <ConclusaoConsulta
+            consultaId={consultaId!}
+            duracaoConsulta={duracaoConsulta}
+            onConcluir={handleConcluirConsulta}
+            onCancelar={handleCancelarConclusao}
+          />
         )}
       </div>
     </div>
