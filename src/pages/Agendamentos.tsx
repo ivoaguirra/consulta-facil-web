@@ -18,7 +18,9 @@ import {
   Check,
   X,
   Eye,
-  Loader2
+  Loader2,
+  Video,
+  MapPin
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -49,12 +51,13 @@ export const Agendamentos: React.FC = () => {
 
   // Estado para novo agendamento
   const [novoAgendamento, setNovoAgendamento] = useState({
-    medico_id: searchParams.get('medico') || '',
+    medico_id: '',
     medico_nome: searchParams.get('nome') || '',
     data_agendamento: '',
     tipo_consulta: '',
     observacoes: '',
     duracao_minutos: 30,
+    modalidade: 'presencial', // presencial ou online
   });
 
   // Buscar agendamentos do usuário e carregar médicos
@@ -67,10 +70,20 @@ export const Agendamentos: React.FC = () => {
 
   // Abrir automaticamente o formulário se vier da página de médicos
   useEffect(() => {
-    if (searchParams.get('medico') && user?.role === 'paciente') {
+    const medicoParam = searchParams.get('medico');
+    if (medicoParam && user?.role === 'paciente') {
+      // Buscar o médico pelo nome para obter o UUID correto
+      const medico = medicos.find(m => m.nome === decodeURIComponent(searchParams.get('nome') || ''));
+      if (medico) {
+        setNovoAgendamento(prev => ({ 
+          ...prev, 
+          medico_id: medico.id,
+          medico_nome: medico.nome 
+        }));
+      }
       setShowNovoAgendamento(true);
     }
-  }, [searchParams, user]);
+  }, [searchParams, user, medicos]);
 
   const buscarAgendamentos = async () => {
     try {
@@ -135,6 +148,8 @@ export const Agendamentos: React.FC = () => {
     }
 
     try {
+      const observacoesCompletas = `${novoAgendamento.observacoes}${novoAgendamento.modalidade === 'online' ? '\n[CONSULTA ONLINE]' : ''}`;
+      
       const { data, error } = await supabase
         .from('agendamentos')
         .insert([
@@ -143,7 +158,7 @@ export const Agendamentos: React.FC = () => {
             medico_id: novoAgendamento.medico_id,
             data_agendamento: new Date(novoAgendamento.data_agendamento).toISOString(),
             tipo_consulta: novoAgendamento.tipo_consulta,
-            observacoes: novoAgendamento.observacoes,
+            observacoes: observacoesCompletas,
             duracao_minutos: novoAgendamento.duracao_minutos,
             status: 'agendado',
           }
@@ -161,7 +176,7 @@ export const Agendamentos: React.FC = () => {
       } else {
         toast({
           title: 'Sucesso',
-          description: 'Agendamento criado com sucesso!',
+          description: `Agendamento criado com sucesso! ${novoAgendamento.modalidade === 'online' ? 'Teleconsulta' : 'Consulta presencial'}`,
         });
         setShowNovoAgendamento(false);
         setNovoAgendamento({
@@ -171,6 +186,7 @@ export const Agendamentos: React.FC = () => {
           tipo_consulta: '',
           observacoes: '',
           duracao_minutos: 30,
+          modalidade: 'presencial',
         });
         buscarAgendamentos();
       }
@@ -351,6 +367,37 @@ export const Agendamentos: React.FC = () => {
               </div>
             </div>
 
+            {/* Modalidade da consulta */}
+            <div className="space-y-2">
+              <Label>Modalidade da Consulta *</Label>
+              <div className="grid grid-cols-2 gap-4">
+                <button
+                  type="button"
+                  className={`flex items-center justify-center gap-2 p-3 border rounded-lg transition-colors ${
+                    novoAgendamento.modalidade === 'presencial' 
+                      ? 'border-primary bg-primary/10 text-primary' 
+                      : 'border-border hover:bg-accent'
+                  }`}
+                  onClick={() => setNovoAgendamento(prev => ({ ...prev, modalidade: 'presencial' }))}
+                >
+                  <MapPin className="w-4 h-4" />
+                  <span className="font-medium">Presencial</span>
+                </button>
+                <button
+                  type="button"
+                  className={`flex items-center justify-center gap-2 p-3 border rounded-lg transition-colors ${
+                    novoAgendamento.modalidade === 'online' 
+                      ? 'border-primary bg-primary/10 text-primary' 
+                      : 'border-border hover:bg-accent'
+                  }`}
+                  onClick={() => setNovoAgendamento(prev => ({ ...prev, modalidade: 'online' }))}
+                >
+                  <Video className="w-4 h-4" />
+                  <span className="font-medium">Teleconsulta</span>
+                </button>
+              </div>
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="observacoes">Observações</Label>
               <Textarea
@@ -424,6 +471,12 @@ export const Agendamentos: React.FC = () => {
                           <span className="text-sm text-muted-foreground">
                             {agendamento.tipo_consulta}
                           </span>
+                          {agendamento.observacoes?.includes('[CONSULTA ONLINE]') && (
+                            <div className="flex items-center gap-1 text-blue-600">
+                              <Video className="w-3 h-3" />
+                              <span className="text-xs font-medium">Online</span>
+                            </div>
+                          )}
                         </div>
 
                         {agendamento.observacoes && (
@@ -462,6 +515,15 @@ export const Agendamentos: React.FC = () => {
                     {/* Ações para pacientes */}
                     {user.role === 'paciente' && (agendamento.status === 'agendado' || agendamento.status === 'confirmado') && (
                       <div className="flex gap-2 pt-2 border-t">
+                        {agendamento.observacoes?.includes('[CONSULTA ONLINE]') && agendamento.status === 'confirmado' && (
+                          <Button 
+                            size="sm"
+                            onClick={() => window.open(`/videochamada/${agendamento.id}`, '_blank')}
+                          >
+                            <Video className="w-4 h-4 mr-1" />
+                            Entrar na Consulta
+                          </Button>
+                        )}
                         <Button size="sm" variant="outline">
                           <Eye className="w-4 h-4 mr-1" />
                           Ver Detalhes
@@ -476,6 +538,19 @@ export const Agendamentos: React.FC = () => {
                             Cancelar
                           </Button>
                         )}
+                      </div>
+                    )}
+
+                    {/* Ações para médicos */}
+                    {user.role === 'medico' && agendamento.observacoes?.includes('[CONSULTA ONLINE]') && agendamento.status === 'confirmado' && (
+                      <div className="flex gap-2 pt-2 border-t">
+                        <Button 
+                          size="sm"
+                          onClick={() => window.open(`/videochamada/${agendamento.id}`, '_blank')}
+                        >
+                          <Video className="w-4 h-4 mr-1" />
+                          Iniciar Consulta Online
+                        </Button>
                       </div>
                     )}
                   </div>
