@@ -149,7 +149,7 @@ export const Agendamentos: React.FC = () => {
       
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, nome, especialidade')
+        .select('id, nome, especialidade, crm, avatar_url')
         .eq('role', 'medico')
         .eq('ativo', true);
 

@@ -233,36 +233,7 @@ export type Database = {
       }
     }
     Views: {
-      medicos_publicos: {
-        Row: {
-          ativo: boolean | null
-          avatar_url: string | null
-          clinica_id: string | null
-          crm: string | null
-          especialidade: string | null
-          id: string | null
-          nome: string | null
-        }
-        Insert: {
-          ativo?: boolean | null
-          avatar_url?: string | null
-          clinica_id?: string | null
-          crm?: string | null
-          especialidade?: string | null
-          id?: string | null
-          nome?: string | null
-        }
-        Update: {
-          ativo?: boolean | null
-          avatar_url?: string | null
-          clinica_id?: string | null
-          crm?: string | null
-          especialidade?: string | null
-          id?: string | null
-          nome?: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       [_ in never]: never

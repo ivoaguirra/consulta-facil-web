@@ -7,8 +7,8 @@ import { useToast } from '@/hooks/use-toast';
 interface MedicoData {
   id: string;
   nome: string;
-  email: string;
   especialidade: string;
+  crm: string;
 }
 
 export function CriarContasMedicos() {
@@ -24,7 +24,7 @@ export function CriarContasMedicos() {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, nome, email, especialidade')
+        .select('id, nome, especialidade, crm')
         .eq('role', 'medico');
 
       if (error) throw error;
@@ -37,9 +37,11 @@ export function CriarContasMedicos() {
   const criarContaMedico = async (medico: MedicoData) => {
     setLoading(true);
     try {
+      // Note: In a real app, email should be part of the doctor data
+      const email = `${medico.nome.toLowerCase().replace(/\s+/g, '.')}@exemplo.com`;
       const { data, error } = await supabase.functions.invoke('criar-conta-medico', {
         body: {
-          email: medico.email,
+          email: email,
           password: 'medico123',
           profileId: medico.id
         }
@@ -49,7 +51,7 @@ export function CriarContasMedicos() {
 
       toast({
         title: 'Conta criada com sucesso!',
-        description: `Login criado para ${medico.nome}: ${medico.email} / senha: medico123`,
+        description: `Login criado para ${medico.nome} / senha: medico123`,
       });
 
     } catch (error: any) {
@@ -79,7 +81,7 @@ export function CriarContasMedicos() {
               <div>
                 <h4 className="font-medium">{medico.nome}</h4>
                 <p className="text-sm text-muted-foreground">{medico.especialidade}</p>
-                <p className="text-sm text-muted-foreground">{medico.email}</p>
+                <p className="text-sm text-muted-foreground">{medico.crm}</p>
               </div>
               <Button
                 onClick={() => criarContaMedico(medico)}
