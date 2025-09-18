@@ -71,15 +71,24 @@ export const Agendamentos: React.FC = () => {
   // Abrir automaticamente o formulário se vier da página de médicos
   useEffect(() => {
     const medicoParam = searchParams.get('medico');
+    const nomeParam = searchParams.get('nome');
+    
+    console.log('URL params:', { medicoParam, nomeParam });
+    console.log('Médicos disponíveis:', medicos);
+    
     if (medicoParam && user?.role === 'paciente') {
-      // Buscar o médico pelo nome para obter o UUID correto
-      const medico = medicos.find(m => m.nome === decodeURIComponent(searchParams.get('nome') || ''));
-      if (medico) {
-        setNovoAgendamento(prev => ({ 
-          ...prev, 
-          medico_id: medico.id,
-          medico_nome: medico.nome 
-        }));
+      // Se temos médicos carregados, buscar o médico correto
+      if (medicos.length > 0 && nomeParam) {
+        const medico = medicos.find(m => m.nome === decodeURIComponent(nomeParam));
+        console.log('Médico encontrado:', medico);
+        
+        if (medico) {
+          setNovoAgendamento(prev => ({ 
+            ...prev, 
+            medico_id: medico.id,
+            medico_nome: medico.nome 
+          }));
+        }
       }
       setShowNovoAgendamento(true);
     }
@@ -138,7 +147,17 @@ export const Agendamentos: React.FC = () => {
   };
 
   const criarAgendamento = async () => {
+    console.log('Dados do agendamento:', novoAgendamento);
+    console.log('User ID:', user?.id);
+    
     if (!user || !novoAgendamento.medico_id || !novoAgendamento.data_agendamento || !novoAgendamento.tipo_consulta) {
+      console.log('Validação falhou:', {
+        user: !!user,
+        medico_id: novoAgendamento.medico_id,
+        data_agendamento: novoAgendamento.data_agendamento,
+        tipo_consulta: novoAgendamento.tipo_consulta
+      });
+      
       toast({
         title: 'Erro',
         description: 'Preencha todos os campos obrigatórios',
