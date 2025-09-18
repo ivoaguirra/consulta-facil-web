@@ -19,7 +19,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useJitsiMeet } from '@/hooks/useJitsiMeet';
 import { JitsiMeetComponent } from '@/components/videochamada/JitsiMeetComponent';
 import { TesteDispositivos } from '@/components/consulta/TesteDispositivos';
-import { ConclusaoConsulta } from '@/components/videochamada/ConclusaoConsulta';
+import { ModalConclusaoConsulta, DadosConclusao } from '@/components/videochamada/ModalConclusaoConsulta';
 import { supabase } from '@/integrations/supabase/client';
 
 export const Videochamada: React.FC = () => {
@@ -41,7 +41,10 @@ export const Videochamada: React.FC = () => {
   const [etapaAtual, setEtapaAtual] = useState<'dispositivos' | 'videochamada'>('dispositivos');
   const [dispositivosTestados, setDispositivosTestados] = useState(false);
   const [duracaoConsulta, setDuracaoConsulta] = useState(0);
-  const [mostrarConclusao, setMostrarConclusao] = useState(false);
+  const [mostrarModalConclusao, setMostrarModalConclusao] = useState(false);
+  const [consultaAtual, setConsultaAtual] = useState<any>(null);
+  const [finalizandoConsulta, setFinalizandoConsulta] = useState(false);
+  
 
   useEffect(() => {
     if (!consultaId) {
@@ -104,54 +107,53 @@ export const Videochamada: React.FC = () => {
   };
 
   const handleSairVideochamada = () => {
-    setMostrarConclusao(true);
+    setMostrarModalConclusao(true);
   };
 
-  const handleConcluirConsulta = async (dados: {
-    observacoesMedico?: string;
-    observacoesPaciente?: string;
-    problemasTecnicos?: string;
-    qualidadeChamada: number;
-  }) => {
+  const handleConfirmarConclusao = async (dados: DadosConclusao) => {
+    setFinalizandoConsulta(true);
+    
     try {
-      // Concluir consulta via Edge Function
-      const { data, error } = await supabase.functions.invoke('concluir-consulta', {
+      // Chamar edge function para finalizar consulta
+      const { data, error } = await supabase.functions.invoke('finalizar-consulta', {
         body: {
-          consultaId: consultaId,
+          consultaId,
           duracaoMinutos: Math.floor(duracaoConsulta / 60),
           ...dados
         }
       });
 
       if (error) {
-        console.error('Erro ao concluir consulta:', error);
+        console.error('Erro ao finalizar consulta:', error);
         toast({
           title: "Erro ao finalizar consulta",
-          description: "Ocorreu um erro ao salvar os dados da consulta",
+          description: error.message || "Tente novamente",
           variant: "destructive"
         });
         return;
       }
 
+      // Desconectar da sala Jitsi
+      desconectarSala();
+      
       toast({
         title: "Consulta finalizada com sucesso",
         description: `Duração: ${formatarDuracao(duracaoConsulta)}`,
       });
-
-      desconectarSala();
-      navigate("/consultas");
-    } catch (error) {
-      console.error('Erro ao concluir consulta:', error);
+      
+      navigate('/consultas');
+      
+    } catch (error: any) {
+      console.error('Erro ao finalizar consulta:', error);
       toast({
         title: "Erro ao finalizar consulta",
-        description: "Ocorreu um erro ao salvar os dados da consulta",
+        description: "Tente novamente",
         variant: "destructive"
       });
+    } finally {
+      setFinalizandoConsulta(false);
+      setMostrarModalConclusao(false);
     }
-  };
-
-  const handleCancelarConclusao = () => {
-    setMostrarConclusao(false);
   };
 
   const handleVoltarConsultas = () => {
@@ -313,15 +315,14 @@ export const Videochamada: React.FC = () => {
           </>
         )}
 
-        {/* Modal de conclusão */}
-        {mostrarConclusao && (
-          <ConclusaoConsulta
-            consultaId={consultaId!}
-            duracaoConsulta={duracaoConsulta}
-            onConcluir={handleConcluirConsulta}
-            onCancelar={handleCancelarConclusao}
-          />
-        )}
+        {/* Modal de conclusão da consulta */}
+        <ModalConclusaoConsulta
+          isOpen={mostrarModalConclusao}
+          onClose={() => setMostrarModalConclusao(false)}
+          onConfirm={handleConfirmarConclusao}
+          duracaoConsulta={duracaoConsulta}
+          isLoading={finalizandoConsulta}
+        />
       </div>
     </div>
   );
