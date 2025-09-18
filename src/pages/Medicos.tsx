@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -194,6 +195,7 @@ const mockMedicos: Medico[] = [
 
 export default function Medicos() {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [medicos, setMedicos] = useState<Medico[]>(mockMedicos);
   const [filtroEspecialidade, setFiltroEspecialidade] = useState('todas');
   const [filtroCidade, setFiltroCidade] = useState('');
@@ -354,8 +356,8 @@ export default function Medicos() {
                       size="sm" 
                       className="flex-1"
                       onClick={() => {
-                        // Redirecionar para agendamentos com ID do médico
-                        window.location.href = `/agendamentos?medico=${medico.id}&nome=${encodeURIComponent(medico.nome)}`;
+                        // Navegar para agendamentos com ID do médico usando React Router
+                        navigate(`/agendamentos?medico=${medico.id}&nome=${encodeURIComponent(medico.nome)}`);
                       }}
                     >
                       <Plus className="w-4 h-4 mr-2" />

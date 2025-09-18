@@ -27,44 +27,86 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
 
   useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+    
+    // Timeout de segurança para garantir que isLoading seja false
+    const safetyTimeout = setTimeout(() => {
+      console.warn('Auth timeout - forçando isLoading = false');
+      setAuthState(prev => ({ ...prev, isLoading: false }));
+    }, 10000);
+
     // Configurar listener de autenticação do Supabase
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('Auth event:', event, session);
+      (event, session) => {
+        console.log('Auth event:', event, session?.user?.id);
+        clearTimeout(safetyTimeout);
         
         if (session?.user) {
-          // Buscar perfil do usuário
-          const { data: profile, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
+          // Atualizar estado imediatamente para evitar loops
+          setAuthState(prev => ({ ...prev, isLoading: false }));
+          
+          // Buscar perfil em uma operação separada
+          setTimeout(async () => {
+            try {
+              const { data: profile, error } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', session.user.id)
+                .single();
 
-          if (profile && !error) {
-            const user: User = {
-              id: profile.id,
-              email: profile.email,
-              nome: profile.nome,
-              role: profile.role,
-              telefone: profile.telefone,
-              cpf: profile.cpf,
-              crm: profile.crm,
-              especialidade: profile.especialidade,
-              clinicaId: profile.clinica_id,
-              endereco: profile.endereco as any,
-              dataNascimento: profile.data_nascimento,
-              createdAt: profile.created_at,
-              updatedAt: profile.updated_at,
-            };
+              if (profile && !error) {
+                const user: User = {
+                  id: profile.id,
+                  email: profile.email,
+                  nome: profile.nome,
+                  role: profile.role,
+                  telefone: profile.telefone,
+                  cpf: profile.cpf,
+                  crm: profile.crm,
+                  especialidade: profile.especialidade,
+                  clinicaId: profile.clinica_id,
+                  endereco: profile.endereco as any,
+                  dataNascimento: profile.data_nascimento,
+                  createdAt: profile.created_at,
+                  updatedAt: profile.updated_at,
+                };
 
-            setAuthState({
-              user,
-              isAuthenticated: true,
-              isLoading: false,
-            });
-          } else {
-            console.error('Erro ao buscar perfil:', error);
-          }
+                setAuthState({
+                  user,
+                  isAuthenticated: true,
+                  isLoading: false,
+                });
+              } else {
+                console.warn('Perfil não encontrado, criando usuário básico:', error);
+                // Criar usuário básico a partir dos dados da sessão
+                const basicUser: User = {
+                  id: session.user.id,
+                  email: session.user.email || '',
+                  nome: session.user.user_metadata?.nome || session.user.email || 'Usuário',
+                  role: session.user.user_metadata?.role || 'paciente',
+                  telefone: session.user.user_metadata?.telefone,
+                  cpf: session.user.user_metadata?.cpf,
+                  crm: session.user.user_metadata?.crm,
+                  especialidade: session.user.user_metadata?.especialidade,
+                  createdAt: session.user.created_at,
+                  updatedAt: session.user.updated_at,
+                };
+
+                setAuthState({
+                  user: basicUser,
+                  isAuthenticated: true,
+                  isLoading: false,
+                });
+              }
+            } catch (error) {
+              console.error('Erro ao buscar perfil:', error);
+              setAuthState({
+                user: null,
+                isAuthenticated: false,
+                isLoading: false,
+              });
+            }
+          }, 0);
         } else {
           setAuthState({
             user: null,
@@ -78,11 +120,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Verificar sessão inicial
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) {
+        clearTimeout(safetyTimeout);
         setAuthState(prev => ({ ...prev, isLoading: false }));
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(safetyTimeout);
+      if (timeoutId) clearTimeout(timeoutId);
+    };
   }, []);
 
   const login = async (email: string, password: string, role: UserRole): Promise<boolean> => {
