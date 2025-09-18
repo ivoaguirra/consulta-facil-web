@@ -115,7 +115,7 @@ export const Videochamada: React.FC = () => {
     
     try {
       // Chamar edge function para finalizar consulta
-      const { data, error } = await supabase.functions.invoke('finalizar-consulta', {
+      const { data, error } = await supabase.functions.invoke('concluir-consulta', {
         body: {
           consultaId,
           duracaoMinutos: Math.floor(duracaoConsulta / 60),
