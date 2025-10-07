@@ -3,22 +3,45 @@
 ## Problema
 Após se cadastrar, você não consegue fazer login e recebe erro "Invalid login credentials".
 
-## Causa
-O Supabase está configurado para exigir confirmação de email. Quando você se cadastra, recebe um email de confirmação que precisa clicar antes de poder fazer login.
+## Causa Raiz IDENTIFICADA ✅
+O email **ivo.aguirra@gmail.com JÁ ESTÁ CONFIRMADO** no banco de dados (confirmado em 2025-09-17), mas a senha cadastrada não está correta. Há uma incompatibilidade entre a senha que você está tentando usar e a que está armazenada no Supabase.
 
-## Solução (Recomendada para Ambiente de Testes)
+## 🔧 Solução IMEDIATA (Execute AGORA)
 
-### Passo 1: Desabilitar Confirmação de Email
-1. Acesse: https://supabase.com/dashboard/project/sqnukbqodqqmrwsggtcv/auth/providers
-2. Role até "Email" (primeiro item da lista)
-3. Clique em "Email" para expandir
-4. **DESMARQUE** a opção "Confirm email"
-5. Clique em "Save"
+### Opção 1: Resetar a Senha do Usuário Existente (RECOMENDADO)
 
-### Passo 2: Tentar Login Novamente
-Agora você pode fazer login normalmente com:
-- **Email**: ivo.aguirra@gmail.com
-- **Senha**: juli1570
+1. **Acesse o painel de usuários do Supabase:**
+   https://supabase.com/dashboard/project/sqnukbqodqqmrwsggtcv/auth/users
+
+2. **Encontre o usuário ivo.aguirra@gmail.com** na lista
+
+3. **Clique nos 3 pontinhos (⋮)** ao lado do usuário
+
+4. **Selecione "Send Password Recovery"** ou **"Reset Password"**
+
+5. **Defina uma nova senha** (exemplo: `NovaSenh@123`) e confirme
+
+6. **Tente fazer login** com a nova senha
+
+### Opção 2: Deletar e Recriar o Usuário
+
+1. **Acesse:** https://supabase.com/dashboard/project/sqnukbqodqqmrwsggtcv/auth/users
+
+2. **Encontre ivo.aguirra@gmail.com** e clique nos 3 pontinhos (⋮)
+
+3. **Delete o usuário**
+
+4. **Na aplicação, faça cadastro novamente** com os dados:
+   - Email: ivo.aguirra@gmail.com
+   - Senha: juli1570 (ou outra de sua preferência)
+
+5. **IMPORTANTE:** Antes de cadastrar, desabilite a confirmação de email:
+   - Acesse: https://supabase.com/dashboard/project/sqnukbqodqqmrwsggtcv/auth/providers
+   - Role até "Email" (primeiro item)
+   - **DESMARQUE** "Confirm email"
+   - Clique em "Save"
+
+6. **Agora faça o cadastro** e o login funcionará imediatamente
 
 ---
 
