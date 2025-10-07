@@ -6,12 +6,24 @@ interface ConsultaRequest {
 }
 
 serve(async (req) => {
-  // CORS headers
+  // CORS headers - Restrito a domínios autorizados
+  const allowedOrigins = [
+    'http://localhost:8080',
+    'https://id-preview--566fe9eb-df57-4daa-8c37-3124af2a2f4e.lovable.app',
+    Deno.env.get('APP_URL') || ''
+  ].filter(Boolean);
+
+  const origin = req.headers.get('origin') || '';
+  const isAllowedOrigin = allowedOrigins.some(allowed => origin.includes(allowed.replace(/https?:\/\//, '')));
+
   const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Origin': isAllowedOrigin ? origin : allowedOrigins[0],
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Methods': 'GET, OPTIONS',
+    'Access-Control-Allow-Credentials': 'true',
   }
+
+  console.log('[CORS] Origin:', origin, 'Allowed:', isAllowedOrigin);
 
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -69,11 +81,25 @@ serve(async (req) => {
         },
         configOverwrite: {
           startAudioOnly: false,
+          startAudioMuted: 0,
+          startVideoMuted: 0,
           enableWelcomePage: false,
-          prejoinPageEnabled: true,
+          prejoinPageEnabled: false, // Desabilitado - usamos nossa própria tela de teste
           disableThirdPartyRequests: true,
+          disableDeepLinking: true, // Importante para mobile
           defaultLanguage: 'pt',
-          enableClosePage: false,
+          enableClosePage: true,
+          requireDisplayName: false,
+          disableProfile: false,
+          enableNoisyMicDetection: true,
+          resolution: 720,
+          constraints: {
+            video: {
+              height: { ideal: 720, max: 1080, min: 360 },
+              width: { ideal: 1280, max: 1920, min: 640 },
+              frameRate: { ideal: 30, max: 30 }
+            }
+          },
           toolbarButtons: [
             'microphone',
             'camera',
@@ -82,12 +108,15 @@ serve(async (req) => {
             'hangup',
             'chat',
             'raisehand',
-            'settings'
+            'settings',
+            'videoquality'
           ]
         },
         interfaceConfigOverwrite: {
           SHOW_JITSI_WATERMARK: false,
           SHOW_WATERMARK_FOR_GUESTS: false,
+          SHOW_BRAND_WATERMARK: false,
+          BRAND_WATERMARK_LINK: '',
           DEFAULT_BACKGROUND: '#1a1a1a',
           TOOLBAR_TIMEOUT: 4000,
           INITIAL_TOOLBAR_TIMEOUT: 20000,
@@ -95,6 +124,8 @@ serve(async (req) => {
           DISABLE_VIDEO_BACKGROUND: false,
           LANG_DETECTION: true,
           INVITATION_POWERED_BY: false,
+          MOBILE_APP_PROMO: false,
+          HIDE_INVITE_MORE_HEADER: true,
         }
       };
 

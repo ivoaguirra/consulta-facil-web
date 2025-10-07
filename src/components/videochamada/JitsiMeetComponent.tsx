@@ -73,13 +73,11 @@ export const JitsiMeetComponent: React.FC<JitsiMeetComponentProps> = ({
           parentNode: jitsiContainerRef.current,
           configOverwrite: {
             ...sala.config.configOverwrite,
-            startAudioMuted: 0,
-            startVideoMuted: 0,
-            enableWelcomePage: false,
-            prejoinPageEnabled: false,
-            disableThirdPartyRequests: true,
-            defaultLanguage: 'pt',
-            enableClosePage: false,
+            // iOS compatibility
+            disableDeepLinking: true,
+            disableAudioLevels: false,
+            enableNoAudioDetection: true,
+            enableNoisyMicDetection: true,
           },
           interfaceConfigOverwrite: {
             ...sala.config.interfaceConfigOverwrite,
@@ -226,7 +224,16 @@ export const JitsiMeetComponent: React.FC<JitsiMeetComponentProps> = ({
           ref={jitsiContainerRef} 
           className="w-full h-96 bg-gray-900"
           style={{ minHeight: '400px' }}
-        />
+        >
+          {/* iOS workaround - elemento de vídeo para playsInline */}
+          <video 
+            autoPlay 
+            playsInline 
+            muted 
+            style={{ display: 'none' }}
+            aria-hidden="true"
+          />
+        </div>
 
         {/* Controles personalizados */}
         <div className="absolute bottom-0 left-0 right-0 z-10 bg-black/50 backdrop-blur-sm p-4">
