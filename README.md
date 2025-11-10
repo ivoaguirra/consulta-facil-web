@@ -98,10 +98,13 @@ cd telemed-platform
 # 3. Instale dependências
 npm install
 
-# 4. Execute em desenvolvimento
+# 4. Gere o arquivo .env.local com placeholders
+npm run setup
+
+# 5. Execute em desenvolvimento
 npm run dev
 
-# 5. Acesse http://localhost:8080
+# 6. Acesse http://localhost:8080
 ```
 
 ### Dados de Teste
@@ -132,6 +135,9 @@ Para testar a aplicação, use qualquer email e senha:
 1. Acesse o [projeto Lovable](https://lovable.dev/projects/566fe9eb-df57-4daa-8c37-3124af2a2f4e)
 2. Clique em Share → Publish
 3. Configure domínio personalizado se necessário
+
+### VPS Hostinger
+- Consulte o guia [`docs/deploy-hostinger.md`](docs/deploy-hostinger.md) para preparar a VPS, criar a pasta da aplicação e publicar os arquivos estáticos em produção.
 
 ### Outras Opções
 - **Vercel**: `npm run build` + deploy

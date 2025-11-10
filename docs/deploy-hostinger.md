@@ -1,0 +1,160 @@
+# Guia de Deploy na VPS da Hostinger
+
+Este guia descreve, passo a passo, como preparar uma VPS Ubuntu/Debian da Hostinger para hospedar o projeto **TeleMed**. Todas as etapas estão em português e consideram um acesso SSH com privilégios de `sudo`.
+
+> 🛟 **Recomendação:** execute os comandos em blocos e só avance quando cada etapa finalizar sem erros.
+
+## 1. Preparar o ambiente da VPS
+
+```bash
+# Atualize a lista de pacotes e aplique correções de segurança
+sudo apt update && sudo apt upgrade -y
+
+# Instale utilitários básicos
+sudo apt install -y build-essential curl git ufw
+```
+
+> Se o firewall (UFW) ainda não estiver habilitado, libere a porta de SSH e HTTP/HTTPS antes de ativá-lo:
+>
+> ```bash
+> sudo ufw allow OpenSSH
+> sudo ufw allow http
+> sudo ufw allow https
+> sudo ufw enable
+> ```
+
+## 2. Instalar Node.js (via NodeSource)
+
+```bash
+# Escolha a versão LTS (20.x) compatível com o projeto
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+
+# Instale Node.js e npm
+sudo apt install -y nodejs
+
+# Verifique se as versões estão corretas
+node -v
+npm -v
+```
+
+Caso prefira usar `nvm`, instale-o e depois execute `nvm install 20`.
+
+## 3. Criar a pasta da aplicação
+
+Defina uma pasta padrão (ex.: `/var/www/consulta-facil-web`). O comando abaixo cria a estrutura e aplica permissões ao usuário atual:
+
+```bash
+APP_DIR=/var/www/consulta-facil-web
+sudo mkdir -p "$APP_DIR"
+sudo chown -R "$USER":"$USER" "$APP_DIR"
+```
+
+Se desejar manter tudo dentro do `home`, utilize `APP_DIR=$HOME/apps/consulta-facil-web`.
+
+## 4. Clonar o repositório
+
+```bash
+cd "$APP_DIR"
+# Substitua a URL abaixo pela do seu fork ou repositório privado
+git clone https://github.com/SEU_USUARIO/consulta-facil-web.git .
+```
+
+Se você já realizou o clone anteriormente, atualize o código com `git pull`.
+
+## 5. Configurar variáveis de ambiente
+
+O projeto fornece um script que gera placeholders no arquivo `.env.local`.
+
+```bash
+# Instale as dependências
+npm install
+
+# Gere o arquivo .env.local com chaves padrão
+npm run setup
+```
+
+Edite `.env.local` e substitua os valores de Supabase/Jitsi pelas credenciais reais do seu projeto.
+
+## 6. Construir o frontend
+
+```bash
+npm run build
+```
+
+O resultado será armazenado na pasta `dist/`.
+
+## 7. Executar em produção
+
+A forma mais simples é servir os arquivos estáticos da pasta `dist` com algum servidor HTTP.
+
+### Opção A: usar o `serve`
+
+```bash
+sudo npm install -g serve
+serve -s dist -l 4173
+```
+
+### Opção B: usar Nginx como proxy reverso
+
+1. Instale o Nginx:
+   ```bash
+   sudo apt install -y nginx
+   ```
+2. Crie um arquivo de configuração em `/etc/nginx/sites-available/consulta-facil` com o conteúdo:
+   ```nginx
+   server {
+     listen 80;
+     server_name exemplo.com.br;
+
+     root /var/www/consulta-facil-web/dist;
+     index index.html;
+
+     location / {
+       try_files $uri /index.html;
+     }
+   }
+   ```
+3. Ative o site e recarregue o Nginx:
+   ```bash
+   sudo ln -s /etc/nginx/sites-available/consulta-facil /etc/nginx/sites-enabled/consulta-facil
+   sudo nginx -t
+   sudo systemctl reload nginx
+   ```
+
+Para HTTPS, configure o [Certbot](https://certbot.eff.org/) após apontar o domínio para a VPS.
+
+## 8. Automatizar o processo (opcional)
+
+Crie um script de deploy simples dentro da VPS (`deploy.sh`):
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+
+APP_DIR=/var/www/consulta-facil-web
+cd "$APP_DIR"
+
+git pull
+npm install
+npm run setup
+npm run build
+```
+
+Depois, execute `chmod +x deploy.sh` e rode `./deploy.sh` a cada atualização.
+
+## 9. Manter o serviço ativo
+
+Se optar por um servidor Node (ex.: `serve`), utilize o [PM2](https://pm2.keymetrics.io/):
+
+```bash
+sudo npm install -g pm2
+pm2 serve dist 4173 --name telemed
+pm2 save
+pm2 startup systemd
+```
+
+Assim, o serviço reinicia automaticamente após reboots.
+
+---
+
+Seguindo os passos acima, a aplicação estará disponível na sua VPS Hostinger com as pastas e dependências corretas.
