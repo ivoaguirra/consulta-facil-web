@@ -75,6 +75,14 @@ npm run setup
 
 Edite `.env.local` e substitua os valores de Supabase/Jitsi pelas credenciais reais do seu projeto.
 
+Variáveis principais:
+
+- `VITE_SUPABASE_URL` – URL do projeto Supabase (ex.: `https://abc123.supabase.co`)
+- `VITE_SUPABASE_PUBLISHABLE_KEY` – chave pública (`anon key`)
+- `VITE_SUPABASE_PROJECT_ID` – ID do projeto (opcional, usado em integrações internas)
+- `VITE_SUPABASE_FUNCTIONS_URL` – (opcional) URL base das Edge Functions. Se não informar, o app usa `${VITE_SUPABASE_URL}/functions/v1`.
+- `VITE_JITSI_BASE_URL` – (opcional) domínio do Jitsi Meet. Padrão: `https://meet.jit.si`.
+
 ## 6. Construir o frontend
 
 ```bash
@@ -125,7 +133,27 @@ Para HTTPS, configure o [Certbot](https://certbot.eff.org/) após apontar o dom�
 
 ## 8. Automatizar o processo (opcional)
 
-Crie um script de deploy simples dentro da VPS (`deploy.sh`):
+### 8.1. Script local para subir o build via SSH
+
+O repositório possui o script [`scripts/deploy-hostinger.sh`](../scripts/deploy-hostinger.sh) que envia a pasta `dist/` via `rsync` para a VPS (certifique-se de ter `ssh` e `rsync` instalados na máquina local).
+
+1. Defina as variáveis de ambiente no seu terminal local (substitua pelos seus dados):
+   ```bash
+   export HOSTINGER_HOST=203.0.113.10
+   export HOSTINGER_USER=seu_usuario
+   export HOSTINGER_PATH=/var/www/consulta-facil-web/dist
+   export HOSTINGER_PORT=22 # opcional, 22 é o padrão
+   ```
+2. Execute o deploy:
+   ```bash
+   npm run deploy:hostinger
+   ```
+
+O script dispara `npm run build` automaticamente (defina `HOSTINGER_SKIP_BUILD=1` se já tiver um build pronto), garante que a pasta remota exista e sincroniza os arquivos de forma incremental.
+
+### 8.2. Script dentro da VPS
+
+Caso prefira atualizar tudo diretamente na VPS, crie um script `deploy.sh` dentro dela:
 
 ```bash
 #!/usr/bin/env bash
