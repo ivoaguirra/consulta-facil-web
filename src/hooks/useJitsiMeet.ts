@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { ENV } from '@/lib/env';
 
 export interface SalaJitsi {
   consultaId: string;
@@ -34,7 +35,7 @@ export const useJitsiMeet = () => {
       }
 
       const response = await fetch(
-        `https://sqnukbqodqqmrwsggtcv.supabase.co/functions/v1/gerar-sala-jitsi/${consultaId}`,
+        `${ENV.SUPABASE_FUNCTIONS_URL}/gerar-sala-jitsi/${consultaId}`,
         {
           method: 'GET',
           headers: {

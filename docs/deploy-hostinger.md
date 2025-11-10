@@ -75,6 +75,14 @@ npm run setup
 
 Edite `.env.local` e substitua os valores de Supabase/Jitsi pelas credenciais reais do seu projeto.
 
+Variáveis principais:
+
+- `VITE_SUPABASE_URL` – URL do projeto Supabase (ex.: `https://abc123.supabase.co`)
+- `VITE_SUPABASE_PUBLISHABLE_KEY` – chave pública (`anon key`)
+- `VITE_SUPABASE_PROJECT_ID` – ID do projeto (opcional, usado em integrações internas)
+- `VITE_SUPABASE_FUNCTIONS_URL` – (opcional) URL base das Edge Functions. Se não informar, o app usa `${VITE_SUPABASE_URL}/functions/v1`.
+- `VITE_JITSI_BASE_URL` – (opcional) domínio do Jitsi Meet. Padrão: `https://meet.jit.si`.
+
 ## 6. Construir o frontend
 
 ```bash
@@ -125,7 +133,26 @@ Para HTTPS, configure o [Certbot](https://certbot.eff.org/) após apontar o dom�
 
 ## 8. Automatizar o processo (opcional)
 
-Crie um script de deploy simples dentro da VPS (`deploy.sh`):
+### 8.1. Script local para subir o build via SSH
+
+O repositório possui o script [`scripts/deploy-hostinger.sh`](../scripts/deploy-hostinger.sh) que envia a pasta `dist/` via `rsync` para a VPS (certifique-se de ter `ssh` e `rsync` instalados na máquina local).
+
+1. Copie o arquivo de exemplo `.env.hostinger.example` para `.env.hostinger` e ajuste os dados reais da sua VPS (por exemplo, usando o host informado `srv462603.hstgr.cloud`):
+   ```bash
+   cp .env.hostinger.example .env.hostinger
+   # Edite o arquivo com seu usuário SSH, caminho remoto etc.
+   ```
+   > O arquivo `.env.hostinger` está listado no `.gitignore` para evitar o commit dos seus dados privados.
+2. Execute o deploy (o script lê automaticamente o `.env.hostinger`; use `HOSTINGER_ENV_FILE=/outro/caminho` para apontar outro arquivo ou passe opções na linha de comando, como `npm run deploy:hostinger -- --host srv462603.hstgr.cloud`):
+   ```bash
+   npm run deploy:hostinger
+   ```
+
+O script dispara `npm run build` automaticamente (defina `HOSTINGER_SKIP_BUILD=1` no arquivo `.env.hostinger` ou via `--skip-build` se já tiver um build pronto), garante que a pasta remota exista e sincroniza os arquivos de forma incremental.
+
+### 8.2. Script dentro da VPS
+
+Caso prefira atualizar tudo diretamente na VPS, crie um script `deploy.sh` dentro dela:
 
 ```bash
 #!/usr/bin/env bash

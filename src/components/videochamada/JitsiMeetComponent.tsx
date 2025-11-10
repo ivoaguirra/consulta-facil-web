@@ -2,11 +2,11 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Video, 
-  VideoOff, 
-  Mic, 
-  MicOff, 
+import {
+  Video,
+  VideoOff,
+  Mic,
+  MicOff,
   Monitor, 
   PhoneOff,
   Settings,
@@ -15,6 +15,7 @@ import {
   Users
 } from 'lucide-react';
 import { SalaJitsi } from '@/hooks/useJitsiMeet';
+import { ENV } from '@/lib/env';
 
 interface JitsiMeetComponentProps {
   sala: SalaJitsi;
@@ -52,7 +53,7 @@ export const JitsiMeetComponent: React.FC<JitsiMeetComponentProps> = ({
       }
 
       const script = document.createElement('script');
-      script.src = 'https://meet.jit.si/external_api.js';
+      script.src = ENV.JITSI_EXTERNAL_API_URL;
       script.async = true;
       script.onload = initializeJitsi;
       script.onerror = () => {
@@ -90,7 +91,7 @@ export const JitsiMeetComponent: React.FC<JitsiMeetComponentProps> = ({
           userInfo: sala.config.userInfo,
         };
 
-        apiRef.current = new window.JitsiMeetExternalAPI('meet.jit.si', options);
+        apiRef.current = new window.JitsiMeetExternalAPI(ENV.JITSI_DOMAIN, options);
 
         // Eventos da API
         apiRef.current.addEventListeners({

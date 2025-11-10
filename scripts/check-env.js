@@ -34,7 +34,7 @@ const REQUIRED = [
   'VITE_SUPABASE_PROJECT_ID',
 ];
 
-const OPTIONAL = ['VITE_JITSI_BASE_URL'];
+const OPTIONAL = ['VITE_JITSI_BASE_URL', 'VITE_SUPABASE_FUNCTIONS_URL'];
 
 const report = [];
 const missing = [];
@@ -69,6 +69,8 @@ const suggestions = {
     envVars.VITE_SUPABASE_PUBLISHABLE_KEY || 'sua-chave-publica-aqui',
   VITE_SUPABASE_PROJECT_ID: envVars.VITE_SUPABASE_PROJECT_ID || 'seu-project-id',
   VITE_JITSI_BASE_URL: envVars.VITE_JITSI_BASE_URL || 'https://meet.jit.si',
+  VITE_SUPABASE_FUNCTIONS_URL:
+    envVars.VITE_SUPABASE_FUNCTIONS_URL || `${envVars.VITE_SUPABASE_URL || 'https://sua-url.supabase.co'}/functions/v1`,
 };
 
 // Adicionar variáveis faltantes

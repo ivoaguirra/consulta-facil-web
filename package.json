@@ -9,7 +9,8 @@
     "build:dev": "vite build --mode development",
     "setup": "node ./scripts/check-env.js",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy:hostinger": "bash scripts/deploy-hostinger.sh"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
