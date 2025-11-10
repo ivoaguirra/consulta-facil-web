@@ -137,19 +137,18 @@ Para HTTPS, configure o [Certbot](https://certbot.eff.org/) após apontar o dom�
 
 O repositório possui o script [`scripts/deploy-hostinger.sh`](../scripts/deploy-hostinger.sh) que envia a pasta `dist/` via `rsync` para a VPS (certifique-se de ter `ssh` e `rsync` instalados na máquina local).
 
-1. Defina as variáveis de ambiente no seu terminal local (substitua pelos seus dados):
+1. Copie o arquivo de exemplo `.env.hostinger.example` para `.env.hostinger` e ajuste os dados reais da sua VPS (por exemplo, usando o host informado `srv462603.hstgr.cloud`):
    ```bash
-   export HOSTINGER_HOST=203.0.113.10
-   export HOSTINGER_USER=seu_usuario
-   export HOSTINGER_PATH=/var/www/consulta-facil-web/dist
-   export HOSTINGER_PORT=22 # opcional, 22 é o padrão
+   cp .env.hostinger.example .env.hostinger
+   # Edite o arquivo com seu usuário SSH, caminho remoto etc.
    ```
-2. Execute o deploy:
+   > O arquivo `.env.hostinger` está listado no `.gitignore` para evitar o commit dos seus dados privados.
+2. Execute o deploy (o script lê automaticamente o `.env.hostinger`; use `HOSTINGER_ENV_FILE=/outro/caminho` para apontar outro arquivo ou passe opções na linha de comando, como `npm run deploy:hostinger -- --host srv462603.hstgr.cloud`):
    ```bash
    npm run deploy:hostinger
    ```
 
-O script dispara `npm run build` automaticamente (defina `HOSTINGER_SKIP_BUILD=1` se já tiver um build pronto), garante que a pasta remota exista e sincroniza os arquivos de forma incremental.
+O script dispara `npm run build` automaticamente (defina `HOSTINGER_SKIP_BUILD=1` no arquivo `.env.hostinger` ou via `--skip-build` se já tiver um build pronto), garante que a pasta remota exista e sincroniza os arquivos de forma incremental.
 
 ### 8.2. Script dentro da VPS
 

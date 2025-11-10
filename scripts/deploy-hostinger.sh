@@ -1,6 +1,104 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+PROJECT_ROOT=$(cd "$SCRIPT_DIR/.." && pwd)
+cd "$PROJECT_ROOT"
+
+CONFIG_FILE_DEFAULT="$PROJECT_ROOT/.env.hostinger"
+REQUESTED_CONFIG="${HOSTINGER_ENV_FILE:-$CONFIG_FILE_DEFAULT}"
+
+load_config() {
+  local file="$1"
+  if [[ -f "$file" ]]; then
+    echo "[deploy-hostinger] Carregando variáveis de $file"
+    # shellcheck source=/dev/null
+    set -a
+    source "$file"
+    set +a
+  fi
+}
+
+load_config "$REQUESTED_CONFIG"
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --host)
+      HOSTINGER_HOST="$2"
+      shift 2
+      ;;
+    --host=*)
+      HOSTINGER_HOST="${1#*=}"
+      shift
+      ;;
+    --user)
+      HOSTINGER_USER="$2"
+      shift 2
+      ;;
+    --user=*)
+      HOSTINGER_USER="${1#*=}"
+      shift
+      ;;
+    --path)
+      HOSTINGER_PATH="$2"
+      shift 2
+      ;;
+    --path=*)
+      HOSTINGER_PATH="${1#*=}"
+      shift
+      ;;
+    --port)
+      HOSTINGER_PORT="$2"
+      shift 2
+      ;;
+    --port=*)
+      HOSTINGER_PORT="${1#*=}"
+      shift
+      ;;
+    --skip-build)
+      HOSTINGER_SKIP_BUILD=1
+      shift
+      ;;
+    --config)
+      HOSTINGER_ENV_FILE="$2"
+      shift 2
+      ;;
+    --config=*)
+      HOSTINGER_ENV_FILE="${1#*=}"
+      shift
+      ;;
+    --help|-h)
+      cat <<'MSG'
+Uso: npm run deploy:hostinger [-- [opções]]
+
+Opções:
+  --host <HOST>          Hostname ou IP da VPS
+  --user <USUÁRIO>       Usuário SSH com permissão de escrita
+  --path <CAMINHO>       Caminho remoto para enviar o build (ex.: /var/www/app/dist)
+  --port <PORTA>         Porta SSH (padrão: 22)
+  --skip-build           Pular etapa de build (usa dist/ atual)
+  --config <ARQUIVO>     Carregar variáveis de um arquivo .env (padrão: .env.hostinger)
+  -h, --help             Mostrar esta ajuda
+
+As opções sobrescrevem variáveis carregadas do ambiente ou do arquivo .env.
+MSG
+      exit 0
+      ;;
+    *)
+      echo "[deploy-hostinger] Opção desconhecida: $1" >&2
+      exit 1
+      ;;
+  esac
+done
+
+if [[ -n "${HOSTINGER_ENV_FILE:-}" ]]; then
+  if [[ "$HOSTINGER_ENV_FILE" != "$REQUESTED_CONFIG" ]]; then
+    load_config "$HOSTINGER_ENV_FILE"
+  elif [[ ! -f "$HOSTINGER_ENV_FILE" && "$HOSTINGER_ENV_FILE" != "$CONFIG_FILE_DEFAULT" ]]; then
+    echo "[deploy-hostinger] Aviso: arquivo $HOSTINGER_ENV_FILE não encontrado." >&2
+  fi
+fi
+
 if ! command -v rsync >/dev/null 2>&1; then
   echo "[deploy-hostinger] rsync não encontrado. Instale com 'sudo apt install -y rsync'." >&2
   exit 1
