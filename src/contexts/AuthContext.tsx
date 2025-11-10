@@ -48,18 +48,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // Buscar perfil em uma operação separada
           setTimeout(async () => {
             try {
-              const { data: profile, error } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', session.user.id)
-                .single();
+              const [{ data: profile, error: profileError }, { data: roleData, error: roleError }] = await Promise.all([
+                supabase
+                  .from('profiles')
+                  .select('*')
+                  .eq('id', session.user.id)
+                  .single(),
+                supabase
+                  .from('user_roles')
+                  .select('role')
+                  .eq('user_id', session.user.id)
+                  .order('created_at', { ascending: true })
+                  .limit(1)
+                  .maybeSingle()
+              ]);
 
-              if (profile && !error) {
+              if (profile && !profileError && roleData) {
                 const user: User = {
                   id: profile.id,
                   email: profile.email,
                   nome: profile.nome,
-                  role: profile.role,
+                  role: roleData.role as UserRole,
                   telefone: profile.telefone,
                   cpf: profile.cpf,
                   crm: profile.crm,
@@ -77,7 +86,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                   isLoading: false,
                 });
               } else {
-                console.warn('Perfil não encontrado, criando usuário básico:', error);
+                console.warn('Perfil não encontrado, criando usuário básico:', profileError, roleError);
                 // Criar usuário básico a partir dos dados da sessão
                 const basicUser: User = {
                   id: session.user.id,
