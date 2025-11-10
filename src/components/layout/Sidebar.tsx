@@ -13,7 +13,8 @@ import {
   Building2,
   UserPlus,
   Clock,
-  TestTube
+  TestTube,
+  Shield
 } from 'lucide-react';
 
 interface NavItem {
@@ -95,6 +96,12 @@ const navigationItems: NavItem[] = [
     label: 'Teste de Câmera',
     icon: TestTube,
     roles: ['medico', 'clinica'],
+  },
+  {
+    href: '/admin',
+    label: 'Administração',
+    icon: Shield,
+    roles: ['admin'],
   },
 ];
 

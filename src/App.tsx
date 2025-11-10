@@ -21,6 +21,7 @@ import Historico from "@/pages/Historico";
 import { Procedimentos } from "@/pages/Procedimentos";
 import TesteCamera from "@/pages/TesteCamera";
 import { Videochamada } from "@/pages/Videochamada";
+import Admin from "@/pages/Admin";
 import NotFound from "@/pages/NotFound";
 
 // Componente para rotas protegidas
@@ -191,6 +192,16 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute>
           <Videochamada />
+        </ProtectedRoute>
+      } 
+    />
+    <Route 
+      path="/admin" 
+      element={
+        <ProtectedRoute>
+          <Layout>
+            <Admin />
+          </Layout>
         </ProtectedRoute>
       } 
     />
